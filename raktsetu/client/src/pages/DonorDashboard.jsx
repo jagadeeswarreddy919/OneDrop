@@ -504,6 +504,9 @@ const DonorDashboard = () => {
   const [editConditions, setEditConditions] = useState(user?.medicalConditions?.join(', ') || '');
   const [editAllergies, setEditAllergies] = useState(user?.allergies?.join(', ') || '');
 
+  // Geolocation loading state
+  const [gpsLoading, setGpsLoading] = useState(false);
+
   // Verification Upload simulation
   const [medicalReportName, setMedicalReportName] = useState('');
   const [doctorVerificationName, setDoctorVerificationName] = useState('');
