@@ -18,6 +18,40 @@ import { STATES_DATA } from '../utils/statesData';
 import AppreciationCertificate from '../components/AppreciationCertificate';
 import SmartSearchInput from '../components/SmartSearchInput';
 
+// Case-insensitive normalization helpers for locations to match STATES_DATA keys
+const normalizeState = (stateName) => {
+  if (!stateName) return '';
+  const match = Object.keys(STATES_DATA).find(
+    s => s.toLowerCase() === stateName.toLowerCase()
+  );
+  return match || stateName;
+};
+
+const normalizeDistrict = (stateName, districtName) => {
+  if (!stateName || !districtName) return '';
+  const normState = normalizeState(stateName);
+  if (!STATES_DATA[normState]) return districtName;
+  const match = Object.keys(STATES_DATA[normState]).find(
+    d => d.toLowerCase() === districtName.toLowerCase() || 
+         d.toLowerCase().includes(districtName.toLowerCase()) || 
+         districtName.toLowerCase().includes(d.toLowerCase())
+  );
+  return match || districtName;
+};
+
+const normalizeCity = (stateName, districtName, cityName) => {
+  if (!stateName || !districtName || !cityName) return '';
+  const normState = normalizeState(stateName);
+  const normDistrict = normalizeDistrict(stateName, districtName);
+  if (!STATES_DATA[normState]?.[normDistrict]) return cityName;
+  const match = STATES_DATA[normState][normDistrict].find(
+    c => c.toLowerCase() === cityName.toLowerCase() || 
+         c.toLowerCase().includes(cityName.toLowerCase()) || 
+         cityName.toLowerCase().includes(c.toLowerCase())
+  );
+  return match || cityName;
+};
+
 const HospitalDashboard = () => {
   const { user, token } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -118,9 +152,9 @@ const HospitalDashboard = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [locationName, setLocationName] = useState('');
-  const [state, setState] = useState(user?.state || '');
-  const [district, setDistrict] = useState(user?.district || '');
-  const [city, setCity] = useState(user?.city || '');
+  const [state, setState] = useState(normalizeState(user?.state || ''));
+  const [district, setDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
+  const [city, setCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
   const [pincode, setPincode] = useState(user?.pincode || '');
   const [bannerImage, setBannerImage] = useState('');
 
@@ -138,9 +172,9 @@ const HospitalDashboard = () => {
   const [reason, setReason] = useState('');
 
   // Geographics for blood request pre-populated from hospital profile
-  const [reqState, setReqState] = useState(user?.state || '');
-  const [reqDistrict, setReqDistrict] = useState(user?.district || '');
-  const [reqCity, setReqCity] = useState(user?.city || '');
+  const [reqState, setReqState] = useState(normalizeState(user?.state || ''));
+  const [reqDistrict, setReqDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
+  const [reqCity, setReqCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
   const [reqPincode, setReqPincode] = useState(user?.pincode || '');
   const [reqHospitalAddress, setReqHospitalAddress] = useState(user?.address || '');
 
@@ -240,6 +274,15 @@ const HospitalDashboard = () => {
       fetchMyRequests();
       fetchNearbyRequests();
       fetchEligibleDonors();
+
+      // Normalize locations upon user load/update
+      setState(normalizeState(user.state || ''));
+      setDistrict(normalizeDistrict(user.state || '', user.district || ''));
+      setCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
+
+      setReqState(normalizeState(user.state || ''));
+      setReqDistrict(normalizeDistrict(user.state || '', user.district || ''));
+      setReqCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
     }
   }, [user]);
 

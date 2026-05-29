@@ -21,6 +21,40 @@ import { BLOOD_BANKS_DATA } from '../utils/bloodBanksData';
 import AppreciationCertificate from '../components/AppreciationCertificate';
 import SmartSearchInput from '../components/SmartSearchInput';
 
+// Case-insensitive normalization helpers for locations to match STATES_DATA keys
+const normalizeState = (stateName) => {
+  if (!stateName) return '';
+  const match = Object.keys(STATES_DATA).find(
+    s => s.toLowerCase() === stateName.toLowerCase()
+  );
+  return match || stateName;
+};
+
+const normalizeDistrict = (stateName, districtName) => {
+  if (!stateName || !districtName) return '';
+  const normState = normalizeState(stateName);
+  if (!STATES_DATA[normState]) return districtName;
+  const match = Object.keys(STATES_DATA[normState]).find(
+    d => d.toLowerCase() === districtName.toLowerCase() || 
+         d.toLowerCase().includes(districtName.toLowerCase()) || 
+         districtName.toLowerCase().includes(d.toLowerCase())
+  );
+  return match || districtName;
+};
+
+const normalizeCity = (stateName, districtName, cityName) => {
+  if (!stateName || !districtName || !cityName) return '';
+  const normState = normalizeState(stateName);
+  const normDistrict = normalizeDistrict(stateName, districtName);
+  if (!STATES_DATA[normState]?.[normDistrict]) return cityName;
+  const match = STATES_DATA[normState][normDistrict].find(
+    c => c.toLowerCase() === cityName.toLowerCase() || 
+         c.toLowerCase().includes(cityName.toLowerCase()) || 
+         cityName.toLowerCase().includes(c.toLowerCase())
+  );
+  return match || cityName;
+};
+
 const RecipientDashboard = () => {
   const { user, token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
@@ -110,9 +144,9 @@ const RecipientDashboard = () => {
   const [reason, setReason] = useState('');
 
   // Location fields for Blood Request
-  const [state, setState] = useState(user?.state || '');
-  const [district, setDistrict] = useState(user?.district || '');
-  const [city, setCity] = useState(user?.city || '');
+  const [state, setState] = useState(normalizeState(user?.state || ''));
+  const [district, setDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
+  const [city, setCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
   const [pincode, setPincode] = useState(user?.pincode || '');
   const [hospitalAddress, setHospitalAddress] = useState(user?.address || '');
 
@@ -126,9 +160,9 @@ const RecipientDashboard = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState(user?.fullName || '');
   const [editPhone, setEditPhone] = useState(user?.phone || '');
-  const [editState, setEditState] = useState(user?.state || '');
-  const [editDistrict, setEditDistrict] = useState(user?.district || '');
-  const [editCity, setEditCity] = useState(user?.city || '');
+  const [editState, setEditState] = useState(normalizeState(user?.state || ''));
+  const [editDistrict, setEditDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
+  const [editCity, setEditCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
   const [editAddress, setEditAddress] = useState(user?.address || '');
   const [editPincode, setEditPincode] = useState(user?.pincode || '');
 
@@ -277,6 +311,19 @@ const RecipientDashboard = () => {
       fetchMyRequests();
       fetchNearbyRequests();
       fetchEligibleDonors();
+
+      // Normalize user location upon fetch/update
+      setState(normalizeState(user.state || ''));
+      setDistrict(normalizeDistrict(user.state || '', user.district || ''));
+      setCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
+      
+      setEditName(user.fullName || '');
+      setEditPhone(user.phone || '');
+      setEditState(normalizeState(user.state || ''));
+      setEditDistrict(normalizeDistrict(user.state || '', user.district || ''));
+      setEditCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
+      setEditAddress(user.address || '');
+      setEditPincode(user.pincode || '');
     }
   }, [user]);
 

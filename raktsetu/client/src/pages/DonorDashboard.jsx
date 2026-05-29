@@ -236,6 +236,40 @@ const LOCALIZATION = {
   }
 };
 
+// Case-insensitive normalization helpers for locations to match STATES_DATA keys
+const normalizeState = (stateName) => {
+  if (!stateName) return '';
+  const match = Object.keys(STATES_DATA).find(
+    s => s.toLowerCase() === stateName.toLowerCase()
+  );
+  return match || stateName;
+};
+
+const normalizeDistrict = (stateName, districtName) => {
+  if (!stateName || !districtName) return '';
+  const normState = normalizeState(stateName);
+  if (!STATES_DATA[normState]) return districtName;
+  const match = Object.keys(STATES_DATA[normState]).find(
+    d => d.toLowerCase() === districtName.toLowerCase() || 
+         d.toLowerCase().includes(districtName.toLowerCase()) || 
+         districtName.toLowerCase().includes(d.toLowerCase())
+  );
+  return match || districtName;
+};
+
+const normalizeCity = (stateName, districtName, cityName) => {
+  if (!stateName || !districtName || !cityName) return '';
+  const normState = normalizeState(stateName);
+  const normDistrict = normalizeDistrict(stateName, districtName);
+  if (!STATES_DATA[normState]?.[normDistrict]) return cityName;
+  const match = STATES_DATA[normState][normDistrict].find(
+    c => c.toLowerCase() === cityName.toLowerCase() || 
+         c.toLowerCase().includes(cityName.toLowerCase()) || 
+         cityName.toLowerCase().includes(c.toLowerCase())
+  );
+  return match || cityName;
+};
+
 const DonorDashboard = () => {
   const { user, token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
@@ -366,9 +400,9 @@ const DonorDashboard = () => {
   const [reqNeededBy, setReqNeededBy] = useState('');
   const [reqEmergencyMode, setReqEmergencyMode] = useState(false);
   const [reqReason, setReqReason] = useState('');
-  const [reqState, setReqState] = useState(user?.state || '');
-  const [reqDistrict, setReqDistrict] = useState(user?.district || '');
-  const [reqCity, setReqCity] = useState(user?.city || '');
+  const [reqState, setReqState] = useState(normalizeState(user?.state || ''));
+  const [reqDistrict, setReqDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
+  const [reqCity, setReqCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
   const [reqPincode, setReqPincode] = useState(user?.pincode || '');
   const [reqHospitalAddress, setReqHospitalAddress] = useState(user?.address || '');
 
@@ -402,9 +436,9 @@ const DonorDashboard = () => {
     if (user) {
       setEditName(user.fullName || '');
       setEditPhone(user.phone || '');
-      setEditState(user.state || '');
-      setEditDistrict(user.district || '');
-      setEditCity(user.city || '');
+      setEditState(normalizeState(user.state || ''));
+      setEditDistrict(normalizeDistrict(user.state || '', user.district || ''));
+      setEditCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
       setEditAddress(user.address || '');
       setEditPincode(user.pincode || '');
       setEditBloodGroup(user.bloodGroup || 'O+');
@@ -413,6 +447,10 @@ const DonorDashboard = () => {
       setEditGender(user.gender || 'Male');
       setEditConditions(user.medicalConditions?.join(', ') || '');
       setEditAllergies(user.allergies?.join(', ') || '');
+
+      setReqState(normalizeState(user.state || ''));
+      setReqDistrict(normalizeDistrict(user.state || '', user.district || ''));
+      setReqCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
     }
   }, [user]);
 
@@ -454,9 +492,9 @@ const DonorDashboard = () => {
   // Edit Profile Form States
   const [editName, setEditName] = useState(user?.fullName || '');
   const [editPhone, setEditPhone] = useState(user?.phone || '');
-  const [editState, setEditState] = useState(user?.state || '');
-  const [editDistrict, setEditDistrict] = useState(user?.district || '');
-  const [editCity, setEditCity] = useState(user?.city || '');
+  const [editState, setEditState] = useState(normalizeState(user?.state || ''));
+  const [editDistrict, setEditDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
+  const [editCity, setEditCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
   const [editAddress, setEditAddress] = useState(user?.address || '');
   const [editPincode, setEditPincode] = useState(user?.pincode || '');
   const [editBloodGroup, setEditBloodGroup] = useState(user?.bloodGroup || 'O+');
@@ -1914,7 +1952,7 @@ const DonorDashboard = () => {
                                 className="w-full p-2 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] outline-none disabled:opacity-55"
                               >
                                 <option value="">Select District</option>
-                                {reqState && Object.keys(STATES_DATA[reqState]).map(d => <option key={d} value={d}>{d}</option>)}
+                                {reqState && STATES_DATA[reqState] && Object.keys(STATES_DATA[reqState]).map(d => <option key={d} value={d}>{d}</option>)}
                               </select>
                             </div>
                             <div>
@@ -1927,7 +1965,7 @@ const DonorDashboard = () => {
                                 className="w-full p-2 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] outline-none disabled:opacity-55"
                               >
                                 <option value="">Select City</option>
-                                {reqState && reqDistrict && STATES_DATA[reqState][reqDistrict].map(c => <option key={c} value={c}>{c}</option>)}
+                                {reqState && reqDistrict && STATES_DATA[reqState]?.[reqDistrict] && STATES_DATA[reqState][reqDistrict].map(c => <option key={c} value={c}>{c}</option>)}
                               </select>
                             </div>
                           </div>
@@ -2967,7 +3005,7 @@ const DonorDashboard = () => {
                               className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50 text-slate-700 dark:text-slate-300"
                             >
                               <option value="">Select District</option>
-                              {editState && Object.keys(STATES_DATA[editState]).map(d => <option key={d} value={d}>{d}</option>)}
+                              {editState && STATES_DATA[editState] && Object.keys(STATES_DATA[editState]).map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                           </div>
                           <div>
@@ -2980,7 +3018,7 @@ const DonorDashboard = () => {
                               className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50 text-slate-700 dark:text-slate-300"
                             >
                               <option value="">Select City / Mandal</option>
-                              {editState && editDistrict && STATES_DATA[editState][editDistrict].map(c => <option key={c} value={c}>{c}</option>)}
+                              {editState && editDistrict && STATES_DATA[editState]?.[editDistrict] && STATES_DATA[editState][editDistrict].map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                           </div>
                         </div>
@@ -3268,7 +3306,7 @@ const DonorDashboard = () => {
                       className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50"
                     >
                       <option value="">Select District</option>
-                      {editState && Object.keys(STATES_DATA[editState]).map(d => <option key={d} value={d}>{d}</option>)}
+                      {editState && STATES_DATA[editState] && Object.keys(STATES_DATA[editState]).map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                   <div>
@@ -3281,7 +3319,7 @@ const DonorDashboard = () => {
                       className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50"
                     >
                       <option value="">Select Mandal / City</option>
-                      {editState && editDistrict && STATES_DATA[editState][editDistrict].map(c => <option key={c} value={c}>{c}</option>)}
+                      {editState && editDistrict && STATES_DATA[editState]?.[editDistrict] && STATES_DATA[editState][editDistrict].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
