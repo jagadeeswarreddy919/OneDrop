@@ -157,7 +157,7 @@ const LoginPage = () => {
         await saveFcmTokenToServer(fcmToken, response.data.token);
       }
 
-      if (response.data.greeting && Notification.permission === 'granted') {
+      if (typeof window !== 'undefined' && 'Notification' in window && response.data.greeting && Notification.permission === 'granted') {
         new Notification('RaktSetu', {
           body: response.data.greeting || buildGreetingMessage(response.data.user?.fullName),
           icon: '/logo.png'

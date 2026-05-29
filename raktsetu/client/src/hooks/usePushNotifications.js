@@ -36,7 +36,7 @@ export const usePushNotifications = (onNotification) => {
         requestId: data.requestId
       });
 
-      if (Notification.permission === 'granted' && document.hidden) {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
         const localNotif = new Notification(title, { 
           body: message, 
           icon: '/logo.png', 
