@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { updateProfileSuccess } from '../redux/authSlice';
+import { updateProfileSuccess, logout } from '../redux/authSlice';
 import { io } from 'socket.io-client';
 import { 
   Heart, Activity, Award, Calendar, ToggleLeft, ToggleRight, Share2, 
@@ -1137,7 +1137,8 @@ const DonorDashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       dispatch(updateProfileSuccess(res.data.user));
-      alert('Profile updated successfully!');
+      alert('Profile updated successfully! For security, you will now be logged out to re-authenticate.');
+      dispatch(logout());
       setShowEditModal(false);
     } catch (err) {
       alert(err.response?.data?.message || 'Profile update failed.');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { updateProfileSuccess } from '../redux/authSlice';
+import { updateProfileSuccess, logout } from '../redux/authSlice';
 import { 
   Heart, Activity, FileText, CheckCircle, Clock, 
   ShieldAlert, MessageSquare, X, Search, Filter, Sparkles, 
@@ -565,7 +565,8 @@ const RecipientDashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       dispatch(updateProfileSuccess(res.data.user));
-      alert('Profile coordinates updated successfully!');
+      alert('Profile updated successfully! For security, you will now be logged out to re-authenticate.');
+      dispatch(logout());
       setShowEditModal(false);
     } catch (err) {
       alert(err.response?.data?.message || 'Profile update failed.');

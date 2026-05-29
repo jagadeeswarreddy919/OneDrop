@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { io } from 'socket.io-client';
+import axios from 'axios';
 import { logout } from './redux/authSlice';
 import { Activity, MessageSquare, LogOut, Heart, Menu, X, Sun, Moon, Bell } from 'lucide-react';
 import NotificationStack from './components/NotificationStack';
@@ -90,7 +91,9 @@ const Navbar = () => {
   const showLandingSections = !isAuthenticated || !user;
 
   const handleLogout = () => {
-    dispatch(logout());
+    if (window.confirm("Are you sure you want to log out of RaktSetu?")) {
+      dispatch(logout());
+    }
   };
 
   const getDashboardLink = () => {
@@ -256,6 +259,29 @@ const AppShell = () => {
   );
   const { isAuthenticated, user, token } = useSelector((state) => state.auth);
   const socketRef = React.useRef(null);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Global Axios Response Interceptor for handling session expiration (401 / 403)
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          if (!window.isSessionExpiredAlertShowing) {
+            window.isSessionExpiredAlertShowing = true;
+            alert(error.response.data?.message || 'Your session has expired. Please log in again.');
+            window.isSessionExpiredAlertShowing = false;
+            dispatch(logout());
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [dispatch]);
 
   const triggerNotification = useCallback((notif) => {
     const entry = { ...notif, id: notif.id || Date.now() };
