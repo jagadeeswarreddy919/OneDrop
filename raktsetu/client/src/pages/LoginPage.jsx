@@ -7,11 +7,13 @@ import axios from 'axios';
 import { API_URL } from '../utils/api';
 import { 
   requestFcmToken, 
-  saveFcmTokenToServer,
-  firebaseSignInWithEmail,
-  firebaseSignInWithGoogle,
-  firebaseSendPasswordReset
+  saveFcmTokenToServer
 } from '../utils/firebase';
+import {
+  supabaseSignInWithEmail,
+  supabaseSignInWithGoogle,
+  supabaseSendPasswordReset
+} from '../utils/supabase';
 import { buildGreetingMessage } from '../utils/greeting';
 
 const LoginPage = () => {
@@ -114,9 +116,9 @@ const LoginPage = () => {
           password
         });
       } else {
-        // User login goes through Firebase first
-        const { idToken } = await firebaseSignInWithEmail(email, password);
-        response = await axios.post(`${API_URL}/api/auth/firebase-login`, { idToken });
+        // User login goes through Supabase first
+        const { accessToken } = await supabaseSignInWithEmail(email, password);
+        response = await axios.post(`${API_URL}/api/auth/supabase-login`, { accessToken });
 
         // Check if new user registration pre-fill is required
         if (response.data.isNewUser) {
@@ -125,8 +127,9 @@ const LoginPage = () => {
             state: { 
               isNewUser: true, 
               email: response.data.email, 
-              firebaseUid: response.data.firebaseUid,
-              fullName: response.data.fullName
+              supabaseUid: response.data.supabaseUid,
+              fullName: response.data.fullName,
+              accessToken
             } 
           });
           return;
@@ -175,8 +178,8 @@ const LoginPage = () => {
     setFormError('');
     dispatch(loginStart());
     try {
-      const { idToken } = await firebaseSignInWithGoogle();
-      const response = await axios.post(`${API_URL}/api/auth/firebase-login`, { idToken });
+      const { accessToken } = await supabaseSignInWithGoogle();
+      const response = await axios.post(`${API_URL}/api/auth/supabase-login`, { accessToken });
 
       if (response.data.isNewUser) {
         dispatch(loginFailure('Redirecting to complete profile setup...'));
@@ -184,8 +187,9 @@ const LoginPage = () => {
           state: { 
             isNewUser: true, 
             email: response.data.email, 
-            firebaseUid: response.data.firebaseUid,
-            fullName: response.data.fullName
+            supabaseUid: response.data.supabaseUid,
+            fullName: response.data.fullName,
+            accessToken
           } 
         });
         return;
@@ -313,7 +317,7 @@ const LoginPage = () => {
     setForgotPasswordSuccess('');
     setFormError('');
     try {
-      await firebaseSendPasswordReset(forgotPasswordEmail);
+      await supabaseSendPasswordReset(forgotPasswordEmail);
       setForgotPasswordSuccess('Password reset link sent! Check your email inbox.');
       setForgotPasswordEmail('');
       setTimeout(() => {

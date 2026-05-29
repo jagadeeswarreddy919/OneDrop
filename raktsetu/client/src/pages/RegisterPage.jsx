@@ -9,11 +9,12 @@ import axios from 'axios';
 import { API_URL } from '../utils/api';
 import { 
   requestFcmToken, 
-  saveFcmTokenToServer,
-  firebaseCreateUserWithEmail,
-  firebaseSendEmailVerification,
-  firebaseGetCurrentUserToken
+  saveFcmTokenToServer
 } from '../utils/firebase';
+import {
+  supabaseCreateUserWithEmail,
+  supabaseGetCurrentUserToken
+} from '../utils/supabase';
 import { 
   Heart, User, Mail, Lock, Phone, Award, Eye, EyeOff, 
   Upload, MapPin, Calendar, Activity, Info, Check, AlertCircle, X, Loader2 
@@ -294,26 +295,23 @@ const RegisterPage = () => {
     try {
       let response;
       
-      if (prefillData.isNewUser && prefillData.firebaseUid) {
+      if (prefillData.isNewUser && prefillData.supabaseUid) {
         // User signing up after Google OAuth popup redirects
-        const idToken = await firebaseGetCurrentUserToken();
-        response = await axios.post(`${API_URL}/api/auth/firebase-register`, {
+        const accessToken = prefillData.accessToken || await supabaseGetCurrentUserToken();
+        response = await axios.post(`${API_URL}/api/auth/supabase-register`, {
           ...payload,
-          idToken
+          accessToken
         });
       } else {
         // Standard Email/Password registration - store permanently in MongoDB!
-        response = await axios.post(`${API_URL}/api/auth/register`, {
-          ...payload,
-          password: data.password
-        });
+        // First register in Supabase Auth to obtain the accessToken
+        const { accessToken } = await supabaseCreateUserWithEmail(data.email, data.password);
         
-        // Also register in Firebase Auth for push sync / future auth compatibility
-        try {
-          await firebaseCreateUserWithEmail(data.email, data.password);
-        } catch (fbErr) {
-          console.warn('[Register] Firebase auth sync skipped:', fbErr.message);
-        }
+        // Then store permanently in MongoDB via our Express server!
+        response = await axios.post(`${API_URL}/api/auth/supabase-register`, {
+          ...payload,
+          accessToken
+        });
       }
       
       setToast({ type: 'success', message: 'Lifesaver account registered successfully! Auto-enabling push notifications...' });
