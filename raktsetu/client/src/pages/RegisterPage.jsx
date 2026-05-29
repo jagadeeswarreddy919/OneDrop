@@ -340,7 +340,10 @@ const RegisterPage = () => {
       }, 2000);
     } catch (err) {
       console.error(err);
-      const errMsg = err.response?.data?.message || 'Registration failed. Check inputs or try another email.';
+      let errMsg = err.response?.data?.message || err.message || 'Registration failed.';
+      if (err.message === 'Network Error') {
+        errMsg = 'Connection Error: Make sure your backend server is running locally on port 5000!';
+      }
       setToast({ type: 'error', message: errMsg });
     } finally {
       setLoading(false);
