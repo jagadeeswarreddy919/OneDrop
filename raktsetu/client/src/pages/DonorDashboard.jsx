@@ -1952,7 +1952,7 @@ const DonorDashboard = () => {
                                 className="w-full p-2 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] outline-none disabled:opacity-55"
                               >
                                 <option value="">Select District</option>
-                                {reqState && STATES_DATA[reqState] && Object.keys(STATES_DATA[reqState]).map(d => <option key={d} value={d}>{d}</option>)}
+                                {Object.keys(STATES_DATA[reqState] || {}).map(d => <option key={d} value={d}>{d}</option>)}
                               </select>
                             </div>
                             <div>
@@ -1965,7 +1965,7 @@ const DonorDashboard = () => {
                                 className="w-full p-2 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] outline-none disabled:opacity-55"
                               >
                                 <option value="">Select City</option>
-                                {reqState && reqDistrict && STATES_DATA[reqState]?.[reqDistrict] && STATES_DATA[reqState][reqDistrict].map(c => <option key={c} value={c}>{c}</option>)}
+                                {(STATES_DATA[reqState]?.[reqDistrict] || []).map(c => <option key={c} value={c}>{c}</option>)}
                               </select>
                             </div>
                           </div>
@@ -3005,7 +3005,7 @@ const DonorDashboard = () => {
                               className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50 text-slate-700 dark:text-slate-300"
                             >
                               <option value="">Select District</option>
-                              {editState && STATES_DATA[editState] && Object.keys(STATES_DATA[editState]).map(d => <option key={d} value={d}>{d}</option>)}
+                              {Object.keys(STATES_DATA[editState] || {}).map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                           </div>
                           <div>
@@ -3018,7 +3018,7 @@ const DonorDashboard = () => {
                               className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50 text-slate-700 dark:text-slate-300"
                             >
                               <option value="">Select City / Mandal</option>
-                              {editState && editDistrict && STATES_DATA[editState]?.[editDistrict] && STATES_DATA[editState][editDistrict].map(c => <option key={c} value={c}>{c}</option>)}
+                              {(STATES_DATA[editState]?.[editDistrict] || []).map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                           </div>
                         </div>
@@ -3306,7 +3306,7 @@ const DonorDashboard = () => {
                       className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50"
                     >
                       <option value="">Select District</option>
-                      {editState && STATES_DATA[editState] && Object.keys(STATES_DATA[editState]).map(d => <option key={d} value={d}>{d}</option>)}
+                      {Object.keys(STATES_DATA[editState] || {}).map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                   <div>
@@ -3319,7 +3319,7 @@ const DonorDashboard = () => {
                       className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50"
                     >
                       <option value="">Select Mandal / City</option>
-                      {editState && editDistrict && STATES_DATA[editState]?.[editDistrict] && STATES_DATA[editState][editDistrict].map(c => <option key={c} value={c}>{c}</option>)}
+                      {(STATES_DATA[editState]?.[editDistrict] || []).map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
