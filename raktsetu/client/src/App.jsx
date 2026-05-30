@@ -315,17 +315,25 @@ const AppShell = () => {
   };
 
   useEffect(() => {
-    const greeting = buildGreetingMessage(user?.fullName || 'Guest');
-    const timer = setTimeout(() => {
-      triggerNotification({
-        id: 'landing-greeting',
-        title: greeting.split(',')[0],
-        message: greeting,
-        type: 'success'
-      });
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (isAuthenticated && user) {
+      const sessionGreeted = sessionStorage.getItem('has_greeted_session');
+      if (!sessionGreeted) {
+        const greeting = buildGreetingMessage(user.fullName);
+        const timer = setTimeout(() => {
+          triggerNotification({
+            id: 'login-greeting',
+            title: greeting.split(',')[0],
+            message: greeting,
+            type: 'success'
+          });
+          sessionStorage.setItem('has_greeted_session', 'true');
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    } else if (!isAuthenticated) {
+      sessionStorage.removeItem('has_greeted_session');
+    }
+  }, [isAuthenticated, user, triggerNotification]);
 
   useEffect(() => {
     if (!isAuthenticated || !user?._id) return;
