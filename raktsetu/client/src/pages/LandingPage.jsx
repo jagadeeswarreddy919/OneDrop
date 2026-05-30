@@ -58,37 +58,37 @@ const GALLERY_ITEMS = [
     title: "Donation Camp Ahmedabad",
     category: "drives",
     desc: "Over 250 units collected at our state-level corporate donation camp.",
-    image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?q=80&w=600&auto=format&fit=crop"
+    image: "/camp_ahmedabad.png"
   },
   {
     title: "Clinical Screening Setup",
     category: "clinical",
     desc: "Verified rapid serology testing for donor health security checks.",
-    image: "https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?q=80&w=600&auto=format&fit=crop"
+    image: "/clinical_setup.png"
   },
   {
     title: "Gift of Life Quote",
     category: "quotes",
     desc: "Your blood is a priceless gift. Share it to save up to three lives.",
-    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=600&auto=format&fit=crop"
+    image: "/gift_of_life.png"
   },
   {
     title: "Verified Proximity Logistics",
     category: "clinical",
     desc: "Certified insulated cold-storage bags ready for transport.",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=600&auto=format&fit=crop"
+    image: "/proximity_logistics.png"
   },
   {
     title: "Lifesaver Youth Drive",
     category: "drives",
     desc: "Students of Kadapa Engineering College showing off rewards.",
-    image: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=600&auto=format&fit=crop"
+    image: "/youth_drive.png"
   },
   {
     title: "Be a Hero Quote",
     category: "quotes",
     desc: "Heroes don't always wear capes. Some roll up their sleeves.",
-    image: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?q=80&w=600&auto=format&fit=crop"
+    image: "/be_a_hero.png"
   }
 ];
 
