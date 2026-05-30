@@ -53,7 +53,8 @@ const RaktsetuLogo = () => (
         fill="#c1272d" 
       />
     </svg>
-    <span className="text-2xl font-extrabold tracking-[0.15em] text-slate-800 uppercase font-sans -mt-0.5">Raktsetu</span>
+    <span className="text-2xl font-extrabold tracking-[0.12em] text-slate-800 uppercase font-sans -mt-0.5">Raktsetu</span>
+    <span className="text-[7.5px] font-bold text-slate-400 tracking-[0.25em] uppercase font-sans -mt-0.5">Bridging Lives, Building Hope</span>
   </div>
 );
 
@@ -89,36 +90,6 @@ const CornerDecorator = ({ className, style }) => (
     <path d="M 5 5 C 15 15, 20 30, 15 40 C 10 48, 0 45, 5 35 C 10 25, 25 10, 35 5" strokeWidth="1.25" />
     <circle cx="22" cy="22" r="2.5" fill="currentColor" />
   </svg>
-);
-
-const ElegantNameDivider = () => (
-  <div className="flex items-center justify-center gap-2 my-3 select-none">
-    <svg viewBox="0 0 200 20" className="w-40 h-4 text-[#c1272d]/80" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M 10 10 L 80 10 C 85 10, 90 5, 95 10 C 100 15, 105 5, 110 10 C 115 15, 120 10, 190 10" stroke="currentColor" strokeWidth="1" fill="none" strokeLinecap="round" />
-      {/* Central scroll loops */}
-      <path d="M 92 10 C 92 6, 97 6, 97 10 C 97 14, 103 14, 103 10 C 103 6, 108 6, 108 10 C 108 14, 92 14, 92 10" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="82" cy="10" r="1.5" />
-      <circle cx="118" cy="10" r="1.5" />
-    </svg>
-  </div>
-);
-
-const CentralStampBadge = ({ count }) => (
-  <div className="relative flex flex-col items-center justify-center select-none">
-    <div className="relative w-20 h-20 rounded-full border-2 border-[#c1272d] flex items-center justify-center bg-white shadow-sm p-1">
-      <div className="absolute inset-0.5 rounded-full border border-dashed border-[#c1272d]/70" />
-      <div className="flex flex-col items-center justify-center text-center">
-        {/* Miniature hands and heart logo */}
-        <svg viewBox="0 0 100 100" className="w-6.5 h-6.5 text-[#c1272d] mb-0.5" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M 25 65 C 32 80, 68 80, 75 65" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
-          <path d="M 50 55 C 50 55, 38 43, 38 35 A 9 9 0 0 1 50 28 A 9 9 0 0 1 62 35 C 62 43, 50 55, 50 55 Z" fill="currentColor" />
-        </svg>
-        <p className="text-[5.5px] font-black text-slate-500 tracking-wider leading-none uppercase">DONATIONS</p>
-        <p className="text-[6px] font-black text-slate-500 tracking-wider leading-none uppercase mt-0.5">MADE</p>
-        <p className="text-xs font-black text-[#c1272d] leading-none mt-1">{count}</p>
-      </div>
-    </div>
-  </div>
 );
 
 const DevagudiSignature = () => (
@@ -157,7 +128,7 @@ const AppreciationCertificate = ({ user }) => {
     <div
       className="print-certificate-area relative w-full max-w-[820px] mx-auto bg-white text-[#1e293b] overflow-hidden min-h-[580px] shadow-2xl rounded-2xl border border-slate-200/50"
       style={{
-        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(193,39,45,0.015) 1px, transparent 0)`,
+        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(193,39,45,0.012) 1px, transparent 0)`,
         backgroundSize: '24px 24px',
       }}
     >
@@ -204,25 +175,30 @@ const AppreciationCertificate = ({ user }) => {
         <div className="mb-4 pt-4">
           <RaktsetuLogo />
           
-          <h1
-            className="text-4xl md:text-5xl font-black text-[#c1272d] tracking-[0.2em] mt-6 uppercase leading-none"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            Certificate
-          </h1>
-
-          {/* —— • ━ • —— Red Divider */}
-          <div className="flex items-center justify-center gap-3 mt-2.5 select-none">
-            <span className="h-[1.5px] w-24 bg-gradient-to-r from-transparent to-[#c1272d]/70" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c1272d]" />
-            <span className="w-2.5 h-2.5 rotate-45 bg-[#c1272d] flex-shrink-0" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c1272d]" />
-            <span className="h-[1.5px] w-24 bg-gradient-to-l from-transparent to-[#c1272d]/70" />
+          {/* flanked by long horizontal lines */}
+          <div className="flex items-center justify-center gap-4 mt-6 select-none">
+            <span className="h-[1.5px] w-12 bg-gradient-to-r from-transparent to-[#c1272d]/70" />
+            <h1
+              className="text-4xl md:text-5xl font-black text-[#c1272d] tracking-[0.2em] uppercase leading-none"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+            >
+              Certificate
+            </h1>
+            <span className="h-[1.5px] w-12 bg-gradient-to-l from-transparent to-[#c1272d]/70" />
           </div>
 
-          <p className="text-xs md:text-sm font-bold tracking-[0.28em] text-slate-500 uppercase mt-2 font-sans">
+          <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-slate-500 uppercase mt-2 font-sans">
             Of Appreciation
           </p>
+
+          {/* —— ♦ —— Red Dot/Diamond Divider */}
+          <div className="flex items-center justify-center gap-3 mt-3 select-none">
+            <span className="h-[1.25px] w-16 bg-gradient-to-r from-transparent to-[#c1272d]/60" />
+            <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 text-[#c1272d] stroke-current fill-current">
+              <rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" />
+            </svg>
+            <span className="h-[1.25px] w-16 bg-gradient-to-l from-transparent to-[#c1272d]/60" />
+          </div>
         </div>
 
         {/* Presented to Ribbon block */}
@@ -236,8 +212,14 @@ const AppreciationCertificate = ({ user }) => {
           {user?.fullName || 'Valued Donor'}
         </h1>
 
-        {/* Elegant scroll line divider below name */}
-        <ElegantNameDivider />
+        {/* Elegant hollow red diamond line divider below name */}
+        <div className="flex items-center justify-center gap-3 my-3.5 select-none">
+          <span className="h-[1px] w-24 bg-gradient-to-r from-transparent to-[#c1272d]/50" />
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-[#c1272d] stroke-current fill-none" strokeWidth="2">
+            <rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" />
+          </svg>
+          <span className="h-[1px] w-24 bg-gradient-to-l from-transparent to-[#c1272d]/50" />
+        </div>
 
         {/* Statement Body Text */}
         <p className="max-w-xl mx-auto text-sm md:text-[15px] text-slate-600 leading-relaxed font-serif px-2 mt-4">
@@ -247,12 +229,14 @@ const AppreciationCertificate = ({ user }) => {
           of many.
         </p>
 
-        {/* Slogan Statement */}
-        <p className="text-[#c1272d] text-xs font-black tracking-widest mt-5 uppercase select-none font-sans flex items-center justify-center gap-1.5">
-          ♥ You Donate Blood, You Save Lives ♥
-        </p>
+        {/* Slogan Statement with flanking lines */}
+        <div className="flex items-center justify-center gap-4 mt-5 select-none font-sans text-xs font-black uppercase tracking-widest text-[#c1272d]">
+          <span className="h-[1px] w-20 bg-gradient-to-r from-transparent to-[#c1272d]" />
+          <span>YOU DONATE BLOOD, YOU SAVE LIVES</span>
+          <span className="h-[1px] w-20 bg-gradient-to-l from-transparent to-[#c1272d]" />
+        </div>
 
-        {/* Refined 4-Column Metrics Row */}
+        {/* Symmetrical 4-Column Metrics Row */}
         <div className="grid grid-cols-4 gap-1 mt-8 max-w-2xl mx-auto items-center">
           
           {/* Col 1: Blood Group */}
@@ -283,17 +267,31 @@ const AppreciationCertificate = ({ user }) => {
             <p className="text-[11px] md:text-xs font-black text-[#c1272d] leading-none mt-0.5">{donationDate}</p>
           </div>
 
-          {/* Col 3: Central Badge Stamp */}
-          <div className="flex flex-col items-center justify-center border-l border-slate-200/80">
-            <CentralStampBadge count={totalDonations} />
+          {/* Col 3: Donations Made (Heart Cluster Icon) */}
+          <div className="flex flex-col items-center gap-1 border-l border-slate-200/80">
+            <svg viewBox="0 0 100 100" className="w-8.5 h-8.5 text-[#c1272d]" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              {/* Central Heart */}
+              <path d="M 50 64 C 50 64, 40 52, 40 44 A 8 8 0 0 1 50 36 A 8 8 0 0 1 60 44 C 60 52, 50 64, 50 64 Z" />
+              {/* Left Heart */}
+              <path d="M 34 58 C 34 58, 26 49, 26 42 A 6 6 0 0 1 34 36 A 6 6 0 0 1 42 42 C 42 49, 34 58, 34 58 Z" opacity="0.75" />
+              {/* Right Heart */}
+              <path d="M 66 58 C 66 58, 58 49, 58 42 A 6 6 0 0 1 66 36 A 6 6 0 0 1 74 42 C 74 49, 66 58, 66 58 Z" opacity="0.75" />
+            </svg>
+            <p className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-widest mt-1">Donations Made</p>
+            <p className="text-sm font-black text-[#c1272d]">{totalDonations}</p>
           </div>
 
-          {/* Col 4: Donor ID */}
+          {/* Col 4: Donor ID (ID Card Icon) */}
           <div className="flex flex-col items-center gap-1 border-l border-slate-200/80">
-            <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#c1272d]" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="8" r="6" />
-              <path d="M15.47 14 L19 22 L12 18.5 L5 22 L8.53 14" />
-              <circle cx="12" cy="8" r="1.75" fill="currentColor" stroke="none" />
+            <svg viewBox="0 0 24 24" className="w-8.5 h-8.5 text-[#c1272d]" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="18" height="16" rx="2" ry="2" />
+              {/* Photo Box */}
+              <rect x="6" y="8" width="5" height="5" strokeWidth="1.5" />
+              {/* Card lines */}
+              <line x1="13" y1="9" x2="18" y2="9" />
+              <line x1="13" y1="13" x2="18" y2="13" />
+              {/* Small Heart in top-right */}
+              <path d="M 17 6.5 C 17 6.5, 16 5, 16 4 A 1 1 0 0 1 17 3 A 1 1 0 0 1 18 4 C 18 5, 17 6.5, 17 6.5 Z" fill="currentColor" stroke="none" />
             </svg>
             <p className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-widest mt-1">Donor ID</p>
             <p className="text-[9.5px] md:text-[10px] font-black text-[#c1272d] leading-none mt-0.5">{donorId}</p>
