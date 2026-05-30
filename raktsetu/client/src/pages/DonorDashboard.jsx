@@ -862,7 +862,7 @@ const DonorDashboard = () => {
   };
 
   const copyReferral = () => {
-    const link = `http://localhost:3000/register?ref=${user?.referralCode}`;
+    const link = `https://raktsetu-india.vercel.app/register?ref=${user?.referralCode}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -2421,9 +2421,9 @@ const DonorDashboard = () => {
                       <p className="text-xs font-bold text-slate-500">Quick Share Networks:</p>
                       <div className="flex gap-2">
                         {[
-                          { label: 'WhatsApp', bg: 'bg-emerald-500 text-white', link: `https://api.whatsapp.com/send?text=Register+at+RaktSetu+referral+code:+${user?.referralCode}` },
-                          { label: 'Telegram', bg: 'bg-sky-500 text-white', link: `https://t.me/share/url?url=http://localhost:3000/register?ref=${user?.referralCode}&text=Join+our+blood+donor+ecosystem` },
-                          { label: 'Twitter', bg: 'bg-slate-900 text-white', link: `https://twitter.com/intent/tweet?url=http://localhost:3000/register?ref=${user?.referralCode}` }
+                          { label: 'WhatsApp', bg: 'bg-emerald-500 text-white', link: `https://api.whatsapp.com/send?text=Join+our+blood+donor+ecosystem+and+register+at+RaktSetu+using+my+referral+link:+https://raktsetu-india.vercel.app/register?ref=${user?.referralCode}` },
+                          { label: 'Telegram', bg: 'bg-sky-500 text-white', link: `https://t.me/share/url?url=https://raktsetu-india.vercel.app/register?ref=${user?.referralCode}&text=Join+our+blood+donor+ecosystem` },
+                          { label: 'Twitter', bg: 'bg-slate-900 text-white', link: `https://twitter.com/intent/tweet?url=https://raktsetu-india.vercel.app/register?ref=${user?.referralCode}` }
                         ].map((net, idx) => (
                           <a 
                             key={idx} 
