@@ -156,6 +156,23 @@ exports.createRequest = async (req, res) => {
         donorQuery.availabilityStatus = 'Available';
       }
 
+      // Restrict notifications: send blood requests to only same area users or same state users.
+      // Admin alert notifications bypass location filters to reach all users system-wide.
+      const isAdmin = req.user.role === 'Admin' || req.user.role === 'Super Admin';
+      if (!isAdmin) {
+        const locationFilters = [];
+        if (pincode) locationFilters.push({ pincode });
+        if (area) locationFilters.push({ area });
+        if (village) locationFilters.push({ village });
+        if (city) locationFilters.push({ city });
+        if (district) locationFilters.push({ district });
+        if (state) locationFilters.push({ state });
+        
+        if (locationFilters.length > 0) {
+          donorQuery.$or = locationFilters;
+        }
+      }
+
       // Fetch matching donors
       const matchingDonors = await User.find(donorQuery);
 
