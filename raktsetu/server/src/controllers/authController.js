@@ -232,30 +232,7 @@ exports.login = async (req, res) => {
     console.log("[LOGIN] JWT generated successfully");
 
     const greetingMsg = buildGreetingMessage(user.fullName);
-    try {
-      console.log("[LOGIN] Creating database greeting notification");
-      await Notification.create({
-        recipient: user._id,
-        type: 'greeting',
-        message: greetingMsg,
-        requestStatus: 'None'
-      });
-      console.log("[LOGIN] Sending socket greeting notifyUser()");
-      notifyUser(user._id, 'greeting', {
-        title: `${getTimeBasedGreeting()}!`,
-        message: greetingMsg,
-        type: 'greeting'
-      });
-      if (user.fcmToken) {
-        sendPushNotification(user.fcmToken, {
-          title: `${getTimeBasedGreeting()} — RaktSetu`,
-          body: greetingMsg,
-          data: { type: 'greeting' }
-        });
-      }
-    } catch (greetErr) {
-      console.warn('[Auth Login] Greeting notification skipped:', greetErr.message);
-    }
+    console.log("[LOGIN] Greeting database & socket notifications bypassed (registration only)");
 
     const userResponse = user.toObject();
     delete userResponse.password;
@@ -431,28 +408,7 @@ exports.firebaseLogin = async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     const greetingMsg = buildGreetingMessage(user.fullName);
 
-    try {
-      await Notification.create({
-        recipient: user._id,
-        type: 'greeting',
-        message: greetingMsg,
-        requestStatus: 'None'
-      });
-      notifyUser(user._id, 'greeting', {
-        title: `${getTimeBasedGreeting()}!`,
-        message: greetingMsg,
-        type: 'greeting'
-      });
-      if (user.fcmToken) {
-        sendPushNotification(user.fcmToken, {
-          title: `${getTimeBasedGreeting()} — RaktSetu`,
-          body: greetingMsg,
-          data: { type: 'greeting' }
-        });
-      }
-    } catch (greetErr) {
-      console.warn('[Firebase Login] Greeting notification skipped:', greetErr.message);
-    }
+    console.log("[Firebase Login] Greeting database & socket notifications bypassed (registration only)");
 
     const userResponse = user.toObject();
     if (userResponse.password) delete userResponse.password;
@@ -702,21 +658,7 @@ exports.supabaseLogin = async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     const greetingMsg = buildGreetingMessage(user.fullName);
 
-    try {
-      await Notification.create({
-        recipient: user._id,
-        type: 'greeting',
-        message: greetingMsg,
-        requestStatus: 'None'
-      });
-      notifyUser(user._id, 'greeting', {
-        title: `${getTimeBasedGreeting()}!`,
-        message: greetingMsg,
-        type: 'greeting'
-      });
-    } catch (greetErr) {
-      console.warn('[Supabase Login] Greeting notification skipped:', greetErr.message);
-    }
+    console.log("[Supabase Login] Greeting database & socket notifications bypassed (registration only)");
 
     const userResponse = user.toObject();
     if (userResponse.password) delete userResponse.password;
