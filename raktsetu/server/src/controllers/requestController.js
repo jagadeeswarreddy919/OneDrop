@@ -669,35 +669,42 @@ exports.searchDonors = async (req, res) => {
 
     // Call Python AI microservice for extra scoring & ranking if available
     if (state && district && city && bloodGroup && donors.length > 0) {
-      try {
-        const aiEngineUrl = process.env.AI_ENGINE_URL || 'http://127.0.0.1:8000';
-        const response = await fetch(`${aiEngineUrl}/api/ai/rank-donors`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            request: { bloodGroup, state, district, city, area: req.query.area || '', village: req.query.village || '' },
-            donors: donors
-          })
-        });
+      const aiEngineUrl = process.env.AI_ENGINE_URL || 'http://127.0.0.1:8000';
+      const isLocalHost = aiEngineUrl.includes('127.0.0.1') || aiEngineUrl.includes('localhost');
+      
+      // Skip connecting to local AI engine in production/Render contexts to prevent request timeouts
+      const shouldAttemptAI = !isLocalHost || (process.env.NODE_ENV !== 'production' && !process.env.RENDER);
 
-        if (response.ok) {
-          const rankedDonors = await response.json();
-          // Merge matches to ensure UI consistency
-          const merged = rankedDonors.map((rd, index) => {
-            const match = donors.find(d => d.email === rd.email);
-            return {
-              ...match,
-              ...rd,
-              matchScore: Math.round((rd.matchScore || (100 - index * 5)) + (match ? match.matchScore : 0))
-            };
+      if (shouldAttemptAI) {
+        try {
+          const response = await fetch(`${aiEngineUrl}/api/ai/rank-donors`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              request: { bloodGroup, state, district, city, area: req.query.area || '', village: req.query.village || '' },
+              donors: donors
+            })
           });
-          merged.sort((a, b) => b.matchScore - a.matchScore);
-          return res.status(200).json(merged);
+
+          if (response.ok) {
+            const rankedDonors = await response.json();
+            // Merge matches to ensure UI consistency
+            const merged = rankedDonors.map((rd, index) => {
+              const match = donors.find(d => d.email === rd.email);
+              return {
+                ...match,
+                ...rd,
+                matchScore: Math.round((rd.matchScore || (100 - index * 5)) + (match ? match.matchScore : 0))
+              };
+            });
+            merged.sort((a, b) => b.matchScore - a.matchScore);
+            return res.status(200).json(merged);
+          }
+        } catch (aiError) {
+          console.log(`[AI Engine] Offline fallback active: ${aiError.message}`);
         }
-      } catch (aiError) {
-        console.warn(`[AI Engine Link Fallback] ${aiError.message}`);
       }
     }
 
