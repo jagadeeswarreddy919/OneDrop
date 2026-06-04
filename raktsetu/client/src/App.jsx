@@ -339,11 +339,29 @@ const AppShell = () => {
   }, [isAuthenticated, user, triggerNotification]);
 
   useEffect(() => {
-    if (!isAuthenticated || !user?._id || !token) return;
+    if (!isAuthenticated || !user?._id || !token) {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+      return;
+    }
 
     socket.auth = { token };
-    socket.connect();
-    socket.emit('register', user._id);
+
+    // Automatically emit the register event on connection or reconnection
+    const registerSession = () => {
+      console.log(`[Socket Client] Registering user session for ${user._id}`);
+      socket.emit('register', user._id);
+    };
+
+    socket.on('connect', registerSession);
+
+    // If socket is already connected (e.g. from previous hook runs), register session immediately
+    if (socket.connected) {
+      registerSession();
+    } else {
+      socket.connect();
+    }
 
     socket.on('greeting', (data) => {
       triggerNotification({
@@ -407,12 +425,14 @@ const AppShell = () => {
     });
 
     return () => {
+      socket.off('connect', registerSession);
       socket.off('greeting');
       socket.off('chat_notification');
       socket.off('new_blood_request');
       socket.off('request_accepted');
       socket.off('admin_broadcast');
-      socket.disconnect();
+      // Do NOT call socket.disconnect() on component re-renders. 
+      // Only disconnect if the user is logging out or authentication has been removed.
     };
   }, [isAuthenticated, user?._id, user?.role, token, triggerNotification]);
 

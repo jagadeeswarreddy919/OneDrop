@@ -15,6 +15,11 @@ const initSockets = (server) => {
   });
   ioInstance = io;
 
+  // Listen to engine connection errors for diagnostics
+  io.engine.on("connection_error", (err) => {
+    console.warn(`[Socket Engine Connection Error] Code ${err.code}: ${err.message}`);
+  });
+
   // Verify JWT token during handshake
   io.use((socket, next) => {
     try {
