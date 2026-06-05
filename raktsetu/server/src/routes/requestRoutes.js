@@ -12,5 +12,7 @@ router.get('/:id', requestController.getRequestById);
 router.post('/:id/pledge', authenticate, requestController.pledgeDonation);
 router.put('/:id/pledge/:pledgeId', authenticate, requestController.updatePledgeStatus);
 router.delete('/:id', authenticate, requestController.deleteRequest);
+router.put('/:id', authenticate, requestController.updateRequest);
+
 
 module.exports = router;

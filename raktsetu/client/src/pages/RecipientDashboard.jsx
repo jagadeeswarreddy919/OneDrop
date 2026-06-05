@@ -169,6 +169,23 @@ const RecipientDashboard = () => {
   // Requests Tracking
   const [myRequests, setMyRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
+
+  // Edit Request Modal State
+  const [showEditRequestModal, setShowEditRequestModal] = useState(false);
+  const [editRequestObj, setEditRequestObj] = useState(null);
+  const [editPatientName, setEditPatientName] = useState('');
+  const [editBloodGroup, setEditBloodGroup] = useState('O+');
+  const [editUnitsRequired, setEditUnitsRequired] = useState(1);
+  const [editHospitalName, setEditHospitalName] = useState('');
+  const [editNeededBy, setEditNeededBy] = useState('');
+  const [editReqPincode, setEditReqPincode] = useState('');
+  const [editReqState, setEditReqState] = useState('');
+  const [editReqDistrict, setEditReqDistrict] = useState('');
+  const [editReqCity, setEditReqCity] = useState('');
+  const [editReqHospitalAddress, setEditReqHospitalAddress] = useState('');
+  const [editEmergencyMode, setEditEmergencyMode] = useState(false);
+  const [editReason, setEditReason] = useState('');
+
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [requestsSubTab, setRequestsSubTab] = useState('myRequests'); // 'myRequests' or 'browseRequests'
   const [nearbyRequests, setNearbyRequests] = useState([]);
@@ -516,6 +533,77 @@ const RecipientDashboard = () => {
       alert(err.response?.data?.message || "Failed to remove the request ticket.");
     }
   };
+
+  const handleUpdateRequestStatus = async (requestId, nextStatus) => {
+    if (handleActionBlock('update request status')) return;
+    const confirmMsg = nextStatus === 'Fulfilled' 
+      ? 'Are you sure you want to mark this blood request as successfully completed/donated?' 
+      : 'Are you sure you want to cancel this blood request?';
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await axios.put(
+        `${API_URL}/api/requests/${requestId}`,
+        { status: nextStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert(`Blood request successfully marked as ${nextStatus}.`);
+      setSelectedRequest(res.data.request);
+      fetchMyRequests();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update request status.');
+    }
+  };
+
+  const handleOpenEditModal = (req) => {
+    setEditRequestObj(req);
+    setEditPatientName(req.patientName || '');
+    setEditBloodGroup(req.bloodGroup || 'O+');
+    setEditUnitsRequired(req.unitsRequired || 1);
+    setEditHospitalName(req.hospitalName || '');
+    setEditNeededBy(req.neededBy ? new Date(req.neededBy).toISOString().substring(0, 10) : '');
+    setEditReqPincode(req.pincode || '');
+    setEditReqState(normalizeState(req.state || ''));
+    setEditReqDistrict(normalizeDistrict(req.state || '', req.district || ''));
+    setEditReqCity(normalizeCity(req.state || '', req.district || '', req.city || ''));
+    setEditReqHospitalAddress(req.hospitalAddress || '');
+    setEditEmergencyMode(req.emergencyMode || false);
+    setEditReason(req.reason || '');
+    setShowEditRequestModal(true);
+  };
+
+  const handleEditRequestSubmit = async (e) => {
+    e.preventDefault();
+    if (handleActionBlock('edit blood request')) return;
+    try {
+      const res = await axios.put(
+        `${API_URL}/api/requests/${editRequestObj._id}`,
+        {
+          patientName: editPatientName,
+          bloodGroup: editBloodGroup,
+          unitsRequired: parseInt(editUnitsRequired),
+          hospitalName: editHospitalName,
+          neededBy: editNeededBy,
+          state: editReqState,
+          district: editReqDistrict,
+          city: editReqCity,
+          pincode: editReqPincode,
+          hospitalAddress: editReqHospitalAddress,
+          emergencyMode: editEmergencyMode,
+          reason: editReason
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert('Blood request ticket successfully updated.');
+      setShowEditRequestModal(false);
+      setSelectedRequest(res.data.request);
+      fetchMyRequests();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update request.');
+    }
+  };
+
 
   const handlePledgeOutcome = async (requestId, pledgeId, status) => {
     if (handleActionBlock('verify pledge status')) return;
@@ -1055,6 +1143,31 @@ const RecipientDashboard = () => {
                         </button>
                       </h3>
                       
+                      <div className="flex flex-wrap gap-2 pb-3 border-b border-slate-100 dark:border-slate-850">
+                        <button
+                          onClick={() => handleOpenEditModal(selectedRequest)}
+                          className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase rounded-lg transition-all"
+                        >
+                          Edit Details
+                        </button>
+                        {selectedRequest.status !== 'Cancelled' && (
+                          <button
+                            onClick={() => handleUpdateRequestStatus(selectedRequest._id, 'Cancelled')}
+                            className="flex-1 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase rounded-lg transition-all"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        {selectedRequest.status !== 'Fulfilled' && (
+                          <button
+                            onClick={() => handleUpdateRequestStatus(selectedRequest._id, 'Fulfilled')}
+                            className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase rounded-lg transition-all shadow"
+                          >
+                            Fulfilled
+                          </button>
+                        )}
+                      </div>
+
                       <div className="space-y-3 max-h-[280px] overflow-y-auto pr-2">
                         {selectedRequest.donorsPledged?.length > 0 ? (
                           selectedRequest.donorsPledged.map((p) => {
@@ -1659,6 +1772,196 @@ const RecipientDashboard = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Edit Blood Request Modal */}
+      {showEditRequestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-slide-up">
+            <button 
+              onClick={() => setShowEditRequestModal(false)}
+              className="absolute top-6 right-6 p-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-full text-slate-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-black flex items-center gap-2">
+                <Heart className="w-6 h-6 text-primary-500 fill-primary-500 animate-pulse" /> Edit Blood Request
+              </h2>
+              <p className="text-xs text-slate-500">Update request details below. Modified alerts will be reflected across active dashboards.</p>
+            </div>
+
+            <form onSubmit={handleEditRequestSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Patient Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editPatientName}
+                  onChange={(e) => setEditPatientName(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-850 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Blood Group Needed</label>
+                  <select
+                    value={editBloodGroup}
+                    onChange={(e) => setEditBloodGroup(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-primary-600 font-bold outline-none"
+                  >
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Units Required</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editUnitsRequired}
+                    onChange={(e) => setEditUnitsRequired(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-855 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Needed By Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editNeededBy}
+                    onChange={(e) => setEditNeededBy(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-850 dark:text-slate-100 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Pincode</label>
+                  <input
+                    type="text"
+                    required
+                    value={editReqPincode}
+                    onChange={(e) => setEditReqPincode(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-855 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Hospital / Clinic Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editHospitalName}
+                  onChange={(e) => setEditHospitalName(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-850 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">State</label>
+                  <select
+                    required
+                    value={editReqState}
+                    onChange={(e) => {
+                      setEditReqState(e.target.value);
+                      setEditReqDistrict('');
+                      setEditReqCity('');
+                    }}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] outline-none text-slate-700 dark:text-slate-300"
+                  >
+                    <option value="">Select State</option>
+                    {Object.keys(STATES_DATA).map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">District</label>
+                  <select
+                    required
+                    disabled={!editReqState}
+                    value={editReqDistrict}
+                    onChange={(e) => {
+                      setEditReqDistrict(e.target.value);
+                      setEditReqCity('');
+                    }}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] outline-none disabled:opacity-55 text-slate-700 dark:text-slate-300"
+                  >
+                    <option value="">Select District</option>
+                    {editReqState && Object.keys(STATES_DATA[editReqState] || {}).map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">City</label>
+                  <select
+                    required
+                    disabled={!editReqDistrict}
+                    value={editReqCity}
+                    onChange={(e) => setEditReqCity(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] outline-none disabled:opacity-55 text-slate-700 dark:text-slate-300"
+                  >
+                    <option value="">Select City</option>
+                    {editReqState && editReqDistrict && (STATES_DATA[editReqState]?.[editReqDistrict] || []).map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Hospital Clinic Address</label>
+                <input
+                  type="text"
+                  required
+                  value={editReqHospitalAddress}
+                  onChange={(e) => setEditReqHospitalAddress(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-850 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+
+              {/* Emergency Modes */}
+              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-red-600 flex items-center gap-1"><ShieldAlert className="w-4 h-4" /> Emergency Broadcast Mode</p>
+                  <p className="text-[10px] text-red-500/80">Check this box to trigger immediate system-wide push notifications.</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={editEmergencyMode} 
+                  onChange={(e) => setEditEmergencyMode(e.target.checked)} 
+                  className="w-4 h-4 text-primary-600 rounded cursor-pointer" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Critical Reason / Diagnosis</label>
+                <textarea
+                  rows="2"
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-slate-850 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowEditRequestModal(false)}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-650 dark:text-slate-350 font-bold rounded-xl text-xs transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs transition-all shadow-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

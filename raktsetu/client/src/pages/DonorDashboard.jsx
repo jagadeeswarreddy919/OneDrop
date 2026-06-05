@@ -642,8 +642,10 @@ const DonorDashboard = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        // Fetch ALL pending requests nationally — no city filter
-        const res = await axios.get(`${API_URL}/api/requests`);
+        // Fetch pending requests matching donor's state and district
+        const res = await axios.get(
+          `${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}`
+        );
         // Show all pending requests that are not from the current user
         setNearbyRequests(res.data.filter((r) => r.status === 'Pending'));
         const pledged = res.data.filter((r) =>
@@ -829,8 +831,29 @@ const DonorDashboard = () => {
     }
   };
 
-  const deleteLog = (id) => {
+  const deleteLog = async (id) => {
     setLogs((prev) => prev.filter(l => l.id !== id));
+    try {
+      await axios.delete(`${API_URL}/api/notifications/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error('Delete notification failed', err);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    const target = logs.find(l => l.id === id);
+    if (!target || !target.unread) return;
+
+    setLogs((prev) => prev.map(l => l.id === id ? { ...l, unread: false } : l));
+    try {
+      await axios.put(`${API_URL}/api/notifications/${id}/read`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error('Mark notification as read failed', err);
+    }
   };
 
   const handleInitiateChat = async (recipientId) => {
@@ -1093,8 +1116,10 @@ const DonorDashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('Thank you for pledging! The request has been successfully accepted and closed.');
-      // Refresh ALL national pending requests
-      const res = await axios.get(`${API_URL}/api/requests`);
+      // Refresh pending requests matching donor's state and district
+      const res = await axios.get(
+        `${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}`
+      );
       setNearbyRequests(res.data.filter(r => r.status === 'Pending'));
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to pledge.');
@@ -1116,7 +1141,7 @@ const DonorDashboard = () => {
       setSmartMatchAlert(null); // Dismiss panel
       
       // Refresh requests listing
-      const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}&city=${user?.city || ''}`);
+      const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}`);
       setNearbyRequests(res.data.filter(r => r.status === 'Pending'));
       
       // Optionally trigger direct chat with the requester
@@ -2687,9 +2712,10 @@ const DonorDashboard = () => {
                     {logs.map((log) => (
                       <div 
                         key={log.id} 
-                        className={`p-4 rounded-2xl flex items-start justify-between border transition-all ${
+                        onClick={() => markAsRead(log.id)}
+                        className={`p-4 rounded-2xl flex items-start justify-between border transition-all cursor-pointer hover:border-slate-350 dark:hover:border-slate-700 ${
                           log.unread 
-                            ? 'bg-primary-500/5 dark:bg-primary-500/10 border-primary-500/20' 
+                            ? 'bg-primary-500/5 dark:bg-primary-500/10 border-primary-500/20 shadow-md' 
                             : 'bg-slate-50 dark:bg-dark-80/20 border-slate-200 dark:border-slate-800'
                         }`}
                       >
@@ -2704,9 +2730,12 @@ const DonorDashboard = () => {
                             {(log.chatPartnerId || log.rawRequest?.chatPartnerId || log.rawRequest?.requester) && (
                               <button
                                 type="button"
-                                onClick={() => handleInitiateChat(
-                                  log.chatPartnerId || log.rawRequest?.chatPartnerId || log.rawRequest?.requester?._id || log.rawRequest?.requester
-                                )}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleInitiateChat(
+                                    log.chatPartnerId || log.rawRequest?.chatPartnerId || log.rawRequest?.requester?._id || log.rawRequest?.requester
+                                  );
+                                }}
                                 className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 dark:bg-dark-800 text-white rounded-lg text-[10px] font-bold hover:bg-slate-700 transition"
                               >
                                 <MessageSquare className="w-3 h-3" /> {LOCALIZATION[lang].chatNow}
@@ -2724,6 +2753,7 @@ const DonorDashboard = () => {
                                   <>
                                     <a
                                       href={`tel:${phoneMatch[1]}`}
+                                      onClick={(e) => e.stopPropagation()}
                                       className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-700 transition"
                                     >
                                       <Phone className="w-3 h-3" /> Call
@@ -2732,6 +2762,7 @@ const DonorDashboard = () => {
                                       href={waUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
                                       className="flex items-center gap-1 px-2.5 py-1 bg-[#25D366] text-white rounded-lg text-[10px] font-bold hover:bg-[#1ebe59] transition"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.556 4.116 1.527 5.849L.057 23.929a.5.5 0 0 0 .609.61l6.185-1.456A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.892a9.87 9.87 0 0 1-5.017-1.374l-.36-.213-3.73.877.906-3.633-.234-.374A9.877 9.877 0 0 1 2.108 12C2.108 6.534 6.534 2.108 12 2.108S21.892 6.534 21.892 12 17.466 21.892 12 21.892z"/></svg>
@@ -2746,7 +2777,10 @@ const DonorDashboard = () => {
                         </div>
 
                         <button 
-                          onClick={() => deleteLog(log.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteLog(log.id);
+                          }}
                           className="ml-3 text-[10px] opacity-60 hover:opacity-100 text-slate-400 hover:text-slate-700 w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-dark-700 rounded-full flex-shrink-0"
                         >
                           ✕

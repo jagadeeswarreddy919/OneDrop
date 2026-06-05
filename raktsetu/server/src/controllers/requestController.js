@@ -156,17 +156,23 @@ exports.createRequest = async (req, res) => {
         donorQuery.availabilityStatus = 'Available';
       }
 
-      // Restrict notifications: send blood requests to only same area users or same state users.
+      // Restrict notifications: send blood requests to matching local area only.
       // Admin alert notifications bypass location filters to reach all users system-wide.
       const isAdmin = req.user.role === 'Admin' || req.user.role === 'Super Admin';
       if (!isAdmin) {
         const locationFilters = [];
         if (pincode) locationFilters.push({ pincode });
-        if (area) locationFilters.push({ area });
         if (village) locationFilters.push({ village });
-        if (city) locationFilters.push({ city });
-        if (district) locationFilters.push({ district });
-        if (state) locationFilters.push({ state });
+        if (area) locationFilters.push({ area });
+        
+        // District-wide match (State + District)
+        const localAreaMatch = {};
+        if (state) localAreaMatch.state = state;
+        if (district) localAreaMatch.district = district;
+        
+        if (Object.keys(localAreaMatch).length > 0) {
+          locationFilters.push(localAreaMatch);
+        }
         
         if (locationFilters.length > 0) {
           donorQuery.$or = locationFilters;
@@ -176,22 +182,55 @@ exports.createRequest = async (req, res) => {
       // Fetch matching donors
       const matchingDonors = await User.find(donorQuery);
 
-      if (matchingDonors.length > 0) {
+      // Fetch matching hospitals and blood banks in the same district/local area
+      const hospitalQuery = {
+        role: 'Hospital'
+      };
+      if (!isAdmin) {
+        const hospLocationFilters = [];
+        if (pincode) hospLocationFilters.push({ pincode });
+        if (village) hospLocationFilters.push({ village });
+        if (area) hospLocationFilters.push({ area });
+        
+        const localHospMatch = {};
+        if (state) localHospMatch.state = state;
+        if (district) localHospMatch.district = district;
+        
+        if (Object.keys(localHospMatch).length > 0) {
+          hospLocationFilters.push(localHospMatch);
+        }
+        
+        if (hospLocationFilters.length > 0) {
+          hospitalQuery.$or = hospLocationFilters;
+        }
+      }
+      const matchingHospitals = await User.find(hospitalQuery);
+
+      const allAlertRecipients = [
+        ...matchingDonors.map(d => ({ user: d, isDonor: true })),
+        ...matchingHospitals.map(h => ({ user: h, isDonor: false }))
+      ];
+
+      if (allAlertRecipients.length > 0) {
         // Save persistent notifications to the DB
-        const notificationsData = matchingDonors.map(donor => ({
-          recipient: donor._id,
+        const notificationsData = allAlertRecipients.map(recipient => ({
+          recipient: recipient.user._id,
           donor: req.user.id,
           bloodRequest: newRequest._id,
           type: emergencyMode ? 'emergency_request' : 'new_request',
-          message: `🚨 Emergency! ${bloodGroup} blood request received for ${patientName} at ${hospitalName}, ${city}.`,
+          message: recipient.isDonor
+            ? `🚨 Emergency! ${bloodGroup} blood request received for ${patientName} at ${hospitalName}, ${city}.`
+            : `🚨 Proximity Alert! ${bloodGroup} blood request received for ${patientName} at ${hospitalName}, ${city}. Please check inventory status.`,
           requestStatus: 'Pending'
         }));
 
         await Notification.insertMany(notificationsData);
 
-        // Dispatch real-time Socket.IO, FCM Push, Email, and SMS alerts
-        matchingDonors.forEach(async (donor) => {
-          notifyUser(donor._id, 'new_blood_request', {
+        // Dispatch alerts
+        allAlertRecipients.forEach(async (recipient) => {
+          const recUser = recipient.user;
+          
+          notifyUser(recUser._id, 'new_blood_request', {
             request: newRequest,
             requestId: newRequest._id,
             requester: req.user.id,
@@ -208,8 +247,8 @@ exports.createRequest = async (req, res) => {
             createdAt: newRequest.createdAt
           });
 
-          if (donor.fcmToken) {
-            sendPushNotification(donor.fcmToken, {
+          if (recUser.fcmToken) {
+            sendPushNotification(recUser.fcmToken, {
               title: emergencyMode ? '🚨 EMERGENCY BLOOD MATCH REQUIRED' : 'Blood Match Request Found',
               body: `Patient: ${patientName} requires ${unitsRequired} units of ${bloodGroup} at ${hospitalName}.`,
               data: {
@@ -221,39 +260,49 @@ exports.createRequest = async (req, res) => {
             });
           }
 
-          // Trigger SMS alert to the matching donor
-          try {
-            const smsMessage = `🚨 RAKTSETU EMERGENCY: ${bloodGroup} blood match required for ${patientName} at ${hospitalName}, ${city}. Proximity matching active. Accept request on your dashboard.`;
-            await sendSMS({
-              to: donor.phone,
-              message: smsMessage
-            });
-          } catch (smsErr) {
-            console.error(`[Request Alerts] SMS dispatch failed for donor ${donor.fullName}:`, smsErr.message);
+          if (recipient.isDonor) {
+            // Trigger SMS alert to the matching donor
+            try {
+              const smsMessage = `🚨 RAKTSETU EMERGENCY: ${bloodGroup} blood match required for ${patientName} at ${hospitalName}, ${city}. Proximity matching active. Accept request on your dashboard.`;
+              await sendSMS({
+                to: recUser.phone,
+                message: smsMessage
+              });
+            } catch (smsErr) {
+              console.error(`[Request Alerts] SMS dispatch failed for donor ${recUser.fullName}:`, smsErr.message);
+            }
           }
 
-          // Trigger HTML email alert to the matching donor
+          // Trigger HTML email alert to the matching donor/hospital
           try {
             const emailHtml = getEmailTemplate(
               emergencyMode ? '🚨 Urgent: Emergency Blood Request Match' : 'Blood Donation Request Match Found',
-              `Dear ${donor.fullName},<br><br>` +
-              `A new blood request matching your blood group (<strong>${bloodGroup}</strong>) has been registered in your area.<br><br>` +
-              `<strong>Patient Name:</strong> ${patientName}<br>` +
-              `<strong>Units Required:</strong> ${unitsRequired} Units<br>` +
-              `<strong>Hospital Location:</strong> ${hospitalName}, ${city}, ${state}<br>` +
-              `<strong>Proximity Pincode:</strong> ${pincode}<br>` +
-              `<strong>Emergency Mode:</strong> ${emergencyMode ? 'URGENT/CRITICAL' : 'Standard'}<br><br>` +
-              `If you are eligible and currently available to donate, please access your dashboard to accept the request and coordinate direct secure communications.`,
-              `http://localhost:5173/donor-dashboard`,
-              'Pledge Blood Donation'
+              recipient.isDonor
+                ? `Dear ${recUser.fullName},<br><br>` +
+                  `A new blood request matching your blood group (<strong>${bloodGroup}</strong>) has been registered in your area.<br><br>` +
+                  `<strong>Patient Name:</strong> ${patientName}<br>` +
+                  `<strong>Units Required:</strong> ${unitsRequired} Units<br>` +
+                  `<strong>Hospital Location:</strong> ${hospitalName}, ${city}, ${state}<br>` +
+                  `<strong>Proximity Pincode:</strong> ${pincode}<br>` +
+                  `<strong>Emergency Mode:</strong> ${emergencyMode ? 'URGENT/CRITICAL' : 'Standard'}<br><br>` +
+                  `If you are eligible and currently available to donate, please access your dashboard to accept the request and coordinate direct secure communications.`
+                : `Dear Medical Partner at ${recUser.fullName},<br><br>` +
+                  `A new proximity blood request has been registered for patient <strong>${patientName}</strong>.<br><br>` +
+                  `<strong>Blood Group Required:</strong> <strong>${bloodGroup}</strong><br>` +
+                  `<strong>Units Required:</strong> ${unitsRequired} Units<br>` +
+                  `<strong>Target Hospital/Clinic:</strong> ${hospitalName}, ${city}, ${state}<br>` +
+                  `<strong>Proximity Pincode:</strong> ${pincode}<br><br>` +
+                  `Please check your blood bank inventory and coordinate if you can help fulfill this request.`,
+              recipient.isDonor ? `http://localhost:5173/donor-dashboard` : `http://localhost:5173/hospital-dashboard`,
+              recipient.isDonor ? 'Pledge Blood Donation' : 'Go to Hospital Portal'
             );
             await sendMail({
-              to: donor.email,
+              to: recUser.email,
               subject: emergencyMode ? `🚨 EMERGENCY: ${bloodGroup} Match Required!` : `Blood Match Found: ${bloodGroup}`,
               html: emailHtml
             });
           } catch (mailErr) {
-            console.error(`[Request Alerts] Email dispatch failed for donor ${donor.fullName}:`, mailErr.message);
+            console.error(`[Request Alerts] Email dispatch failed for ${recUser.fullName}:`, mailErr.message);
           }
         });
       }
@@ -801,3 +850,62 @@ exports.deleteRequest = async (req, res) => {
     res.status(500).json({ message: 'Failed to delete blood request.', error: error.message });
   }
 };
+
+exports.updateRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const request = await BloodRequest.findById(id);
+
+    if (!request) {
+      return res.status(404).json({ message: 'Blood request ticket not found.' });
+    }
+
+    // Ensure only the requester can edit their request
+    if (request.requester.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized: Only the publisher can edit this request ticket.' });
+    }
+
+    const {
+      patientName, bloodGroup, unitsRequired, hospitalName,
+      state, district, city, area, village, pincode, hospitalAddress,
+      emergencyMode, neededBy, reason, status
+    } = req.body;
+
+    if (patientName !== undefined) request.patientName = patientName;
+    if (bloodGroup !== undefined) request.bloodGroup = bloodGroup;
+    if (unitsRequired !== undefined) request.unitsRequired = unitsRequired;
+    if (hospitalName !== undefined) request.hospitalName = hospitalName;
+    if (state !== undefined) request.state = state;
+    if (district !== undefined) request.district = district;
+    if (city !== undefined) request.city = city;
+    if (area !== undefined) request.area = area;
+    if (village !== undefined) request.village = village;
+    if (pincode !== undefined) request.pincode = pincode;
+    if (hospitalAddress !== undefined) request.hospitalAddress = hospitalAddress;
+    if (emergencyMode !== undefined) request.emergencyMode = emergencyMode;
+    if (neededBy !== undefined) request.neededBy = neededBy;
+    if (reason !== undefined) request.reason = reason;
+    if (status !== undefined) {
+      if (!['Pending', 'Approved', 'Fulfilled', 'Cancelled'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status value.' });
+      }
+      request.status = status;
+    }
+
+    await request.save();
+
+    await AuditLog.create({
+      action: 'BLOOD_REQUEST_UPDATE',
+      performedBy: req.user.id,
+      role: req.user.role,
+      ipAddress: req.ip,
+      details: { requestId: id, status: request.status }
+    });
+
+    res.status(200).json({ message: 'Blood request ticket successfully updated.', request });
+  } catch (error) {
+    console.error(`[Request Controller] Update error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to update blood request.', error: error.message });
+  }
+};
+

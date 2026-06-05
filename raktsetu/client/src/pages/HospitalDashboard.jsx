@@ -6,7 +6,7 @@ import {
   Plus, Heart, MessageSquare, Phone, MapPin, X, RefreshCw, Loader2,
   Printer, Search, Award, Users, Sparkles 
 } from 'lucide-react';
-import { updateProfileSuccess } from '../redux/authSlice';
+import { updateProfileSuccess, logout } from '../redux/authSlice';
 import { 
   firebaseSendEmailVerification, 
   firebaseGetCurrentUserToken 
@@ -80,6 +80,17 @@ const HospitalDashboard = () => {
 
   const [eligibleDonors, setEligibleDonors] = useState([]);
   const [searching, setSearching] = useState(false);
+
+  // Edit Profile States
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editName, setEditName] = useState(user?.fullName || '');
+  const [editPhone, setEditPhone] = useState(user?.phone || '');
+  const [editState, setEditState] = useState(user?.state || '');
+  const [editDistrict, setEditDistrict] = useState(user?.district || '');
+  const [editCity, setEditCity] = useState(user?.city || '');
+  const [editAddress, setEditAddress] = useState(user?.address || '');
+  const [editPincode, setEditPincode] = useState(user?.pincode || '');
+  const [editLicense, setEditLicense] = useState(user?.hospitalLicenseNumber || '');
 
 
   const handleResendVerification = async () => {
@@ -182,6 +193,22 @@ const HospitalDashboard = () => {
   const [myRequests, setMyRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
+  // Edit Request Modal State
+  const [showEditRequestModal, setShowEditRequestModal] = useState(false);
+  const [editRequestObj, setEditRequestObj] = useState(null);
+  const [editPatientName, setEditPatientName] = useState('');
+  const [editBloodGroup, setEditBloodGroup] = useState('O+');
+  const [editUnitsRequired, setEditUnitsRequired] = useState(1);
+  const [editNeededBy, setEditNeededBy] = useState('');
+  const [editReqPincode, setEditReqPincode] = useState('');
+  const [editReqState, setEditReqState] = useState('');
+  const [editReqDistrict, setEditReqDistrict] = useState('');
+  const [editReqCity, setEditReqCity] = useState('');
+  const [editReqHospitalAddress, setEditReqHospitalAddress] = useState('');
+  const [editEmergencyMode, setEditEmergencyMode] = useState(false);
+  const [editReason, setEditReason] = useState('');
+
+
   const fetchDrives = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/campaigns`);
@@ -283,6 +310,16 @@ const HospitalDashboard = () => {
       setReqState(normalizeState(user.state || ''));
       setReqDistrict(normalizeDistrict(user.state || '', user.district || ''));
       setReqCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
+
+      // Set edit profile states
+      setEditName(user.fullName || '');
+      setEditPhone(user.phone || '');
+      setEditState(normalizeState(user.state || ''));
+      setEditDistrict(normalizeDistrict(user.state || '', user.district || ''));
+      setEditCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
+      setEditAddress(user.address || '');
+      setEditPincode(user.pincode || '');
+      setEditLicense(user.hospitalLicenseNumber || '');
     }
   }, [user]);
 
@@ -347,6 +384,120 @@ const HospitalDashboard = () => {
       alert(err.response?.data?.message || 'Failed to submit request.');
     }
   };
+
+  const handleUpdateRequestStatus = async (requestId, nextStatus) => {
+    if (handleActionBlock('update request status')) return;
+    const confirmMsg = nextStatus === 'Fulfilled' 
+      ? 'Are you sure you want to mark this blood request as successfully completed/donated?' 
+      : 'Are you sure you want to cancel this blood request?';
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await axios.put(
+        `${API_URL}/api/requests/${requestId}`,
+        { status: nextStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert(`Blood request successfully marked as ${nextStatus}.`);
+      setSelectedRequest(res.data.request);
+      fetchMyRequests();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update request status.');
+    }
+  };
+
+  const handleOpenEditModal = (req) => {
+    setEditRequestObj(req);
+    setEditPatientName(req.patientName || '');
+    setEditBloodGroup(req.bloodGroup || 'O+');
+    setEditUnitsRequired(req.unitsRequired || 1);
+    setEditNeededBy(req.neededBy ? new Date(req.neededBy).toISOString().substring(0, 10) : '');
+    setEditReqPincode(req.pincode || '');
+    setEditReqState(normalizeState(req.state || ''));
+    setEditReqDistrict(normalizeDistrict(req.state || '', req.district || ''));
+    setEditReqCity(normalizeCity(req.state || '', req.district || '', req.city || ''));
+    setEditReqHospitalAddress(req.hospitalAddress || '');
+    setEditEmergencyMode(req.emergencyMode || false);
+    setEditReason(req.reason || '');
+    setShowEditRequestModal(true);
+  };
+
+  const handleEditRequestSubmit = async (e) => {
+    e.preventDefault();
+    if (handleActionBlock('edit blood request')) return;
+    try {
+      const res = await axios.put(
+        `${API_URL}/api/requests/${editRequestObj._id}`,
+        {
+          patientName: editPatientName,
+          bloodGroup: editBloodGroup,
+          unitsRequired: parseInt(editUnitsRequired),
+          neededBy: editNeededBy,
+          state: editReqState,
+          district: editReqDistrict,
+          city: editReqCity,
+          pincode: editReqPincode,
+          hospitalAddress: editReqHospitalAddress,
+          emergencyMode: editEmergencyMode,
+          reason: editReason
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert('Blood request ticket successfully updated.');
+      setShowEditRequestModal(false);
+      setSelectedRequest(res.data.request);
+      fetchMyRequests();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update request.');
+    }
+  };
+
+  const handleDeleteRequest = async (requestId, e) => {
+    e.stopPropagation();
+    if (handleActionBlock('delete blood request')) return;
+    if (!window.confirm('Are you sure you want to permanently delete this blood request ticket? This action cannot be undone.')) return;
+    try {
+      await axios.delete(`${API_URL}/api/requests/${requestId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Blood request ticket deleted successfully.');
+      if (selectedRequest?._id === requestId) {
+        setSelectedRequest(null);
+      }
+      fetchMyRequests();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete blood request.');
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (handleActionBlock('update profile')) return;
+    try {
+      const res = await axios.put(
+        `${API_URL}/api/auth/profile`,
+        {
+          fullName: editName,
+          phone: editPhone,
+          state: editState,
+          district: editDistrict,
+          city: editCity,
+          address: editAddress,
+          pincode: editPincode,
+          hospitalLicenseNumber: editLicense
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      dispatch(updateProfileSuccess(res.data.user));
+      alert('Profile updated successfully! For security, you will now be logged out to re-authenticate.');
+      dispatch(logout());
+      setShowEditProfileModal(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Profile update failed.');
+    }
+  };
+
 
   const handlePledgeOutcome = async (requestId, pledgeId, status) => {
     if (handleActionBlock('verify pledge status')) return;
@@ -478,7 +629,15 @@ const HospitalDashboard = () => {
               <span className="px-3 py-1 text-[10px] font-black uppercase bg-amber-600 rounded-full">Verification Pending</span>
             )}
           </div>
-          <h1 className="text-3xl font-black mt-2">{user.fullName}</h1>
+          <div className="flex flex-wrap items-center gap-3 mt-2">
+            <h1 className="text-3xl font-black">{user.fullName}</h1>
+            <button 
+              onClick={() => setShowEditProfileModal(true)}
+              className="px-3 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold transition-all shadow-sm"
+            >
+              Edit Profile Coordinates
+            </button>
+          </div>
           <p className="text-xs text-slate-400">License ID: {user.hospitalLicenseNumber || 'Pending'} • Location: {user.city}, {user.state}</p>
         </div>
       </div>
@@ -586,8 +745,15 @@ const HospitalDashboard = () => {
                         <p className="font-bold text-xs">Patient: {req.patientName}</p>
                         <p className="text-[10px] text-slate-400">{req.unitsFulfilled || 0} / {req.unitsRequired} Units Pledged</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right flex items-center gap-2">
                         <span className="text-[10px] font-bold text-slate-500">{req.donorsPledged?.length || 0} Pledge(s)</span>
+                        <button
+                          onClick={(e) => handleDeleteRequest(req._id, e)}
+                          title="Delete Request"
+                          className="p-1.5 hover:bg-rose-100 hover:text-rose-600 rounded-full text-slate-400 dark:hover:bg-rose-950/30 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   ))
@@ -615,6 +781,31 @@ const HospitalDashboard = () => {
                       </button>
                     </div>
                     
+                    <div className="flex flex-wrap gap-2 pb-3 border-b border-slate-100 dark:border-slate-850">
+                      <button
+                        onClick={() => handleOpenEditModal(selectedRequest)}
+                        className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase rounded-lg transition-all"
+                      >
+                        Edit Details
+                      </button>
+                      {selectedRequest.status !== 'Cancelled' && (
+                        <button
+                          onClick={() => handleUpdateRequestStatus(selectedRequest._id, 'Cancelled')}
+                          className="flex-1 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase rounded-lg transition-all"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      {selectedRequest.status !== 'Fulfilled' && (
+                        <button
+                          onClick={() => handleUpdateRequestStatus(selectedRequest._id, 'Fulfilled')}
+                          className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase rounded-lg transition-all shadow"
+                        >
+                          Fulfilled
+                        </button>
+                      )}
+                    </div>
+
                     <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1">
                       {selectedRequest.donorsPledged?.length > 0 ? (
                         selectedRequest.donorsPledged.map((p) => (
@@ -1248,6 +1439,341 @@ const HospitalDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Blood Request Modal */}
+      {showEditRequestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-slide-up">
+            <button 
+              onClick={() => setShowEditRequestModal(false)}
+              className="absolute top-6 right-6 p-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-full text-slate-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-black flex items-center gap-2">
+                <Heart className="w-6 h-6 text-primary-500 fill-primary-500 animate-pulse" /> Edit Blood Request
+              </h2>
+              <p className="text-xs text-slate-500">Update request details below. Modified alerts will be reflected across active dashboards.</p>
+            </div>
+
+            <form onSubmit={handleEditRequestSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Patient Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editPatientName}
+                  onChange={(e) => setEditPatientName(e.target.value)}
+                  className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-850 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Blood Group Needed</label>
+                  <select
+                    value={editBloodGroup}
+                    onChange={(e) => setEditBloodGroup(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-primary-600 font-bold outline-none"
+                  >
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Units Required</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editUnitsRequired}
+                    onChange={(e) => setEditUnitsRequired(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-855 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Needed By Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editNeededBy}
+                    onChange={(e) => setEditNeededBy(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-850 dark:text-slate-100 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Pincode</label>
+                  <input
+                    type="text"
+                    required
+                    value={editReqPincode}
+                    onChange={(e) => setEditReqPincode(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-slate-850 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">State</label>
+                  <select
+                    value={editReqState}
+                    onChange={(e) => {
+                      setEditReqState(e.target.value);
+                      setEditReqDistrict('');
+                      setEditReqCity('');
+                    }}
+                    required
+                    className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none"
+                  >
+                    <option value="">Select State</option>
+                    {Object.keys(STATES_DATA).map((st) => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">District</label>
+                  <select
+                    value={editReqDistrict}
+                    onChange={(e) => {
+                      setEditReqDistrict(e.target.value);
+                      setEditReqCity('');
+                    }}
+                    required
+                    disabled={!editReqState}
+                    className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs disabled:opacity-50 outline-none text-slate-700 dark:text-slate-300"
+                  >
+                    <option value="">Select District</option>
+                    {editReqState && Object.keys(STATES_DATA[editReqState] || {}).map((dst) => (
+                      <option key={dst} value={dst}>{dst}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">City / Mandal</label>
+                <select
+                  value={editReqCity}
+                  onChange={(e) => setEditReqCity(e.target.value)}
+                  required
+                  disabled={!editReqDistrict}
+                  className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs disabled:opacity-50 outline-none text-slate-700 dark:text-slate-300"
+                >
+                  <option value="">Select City</option>
+                  {editReqState && editReqDistrict && (STATES_DATA[editReqState]?.[editReqDistrict] || []).map((cty) => (
+                    <option key={cty} value={cty}>{cty}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Hospital Clinic Address</label>
+                <input
+                  type="text"
+                  required
+                  value={editReqHospitalAddress}
+                  onChange={(e) => setEditReqHospitalAddress(e.target.value)}
+                  className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-850 dark:text-slate-100 outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+
+              {/* Emergency Modes */}
+              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-red-600 flex items-center gap-1"><ShieldAlert className="w-3.5 h-3.5" /> Emergency Broadcast Mode</p>
+                  <p className="text-[9px] text-red-500/80">Trigger immediate system-wide push notifications.</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={editEmergencyMode} 
+                  onChange={(e) => setEditEmergencyMode(e.target.checked)} 
+                  className="w-4 h-4 text-primary-600 rounded cursor-pointer" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Critical Reason / Diagnosis</label>
+                <textarea
+                  rows="2"
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none text-slate-850 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowEditRequestModal(false)}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-650 dark:text-slate-350 font-bold rounded-xl text-xs transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs transition-all shadow-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEditProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-slide-up">
+            <button 
+              onClick={() => setShowEditProfileModal(false)}
+              className="absolute top-6 right-6 p-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-full text-slate-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-black">Edit Hospital Profile</h2>
+              <p className="text-xs text-slate-500">Update your details to ensure correct coordinates for emergency assists and matching.</p>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-extrabold text-xs text-primary-500 uppercase tracking-widest border-b pb-1">1. Hospital Details</h4>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Hospital / Clinic Name</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:ring-1 focus:ring-primary-500 font-bold text-slate-850 dark:text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      required 
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:ring-1 focus:ring-primary-500 font-bold text-slate-850 dark:text-slate-100"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Hospital License Number</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editLicense}
+                    onChange={(e) => setEditLicense(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:ring-1 focus:ring-primary-500 font-bold text-slate-850 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-extrabold text-xs text-primary-500 uppercase tracking-widest border-b pb-1">2. Location Details</h4>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">State</label>
+                    <select 
+                      required 
+                      value={editState}
+                      onChange={(e) => {
+                        setEditState(e.target.value);
+                        setEditDistrict('');
+                        setEditCity('');
+                      }}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-slate-850 dark:text-slate-100"
+                    >
+                      <option value="">Select State</option>
+                      {Object.keys(STATES_DATA).map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">District</label>
+                    <select 
+                      required 
+                      disabled={!editState}
+                      value={editDistrict}
+                      onChange={(e) => {
+                        setEditDistrict(e.target.value);
+                        setEditCity('');
+                      }}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50 text-slate-850 dark:text-slate-100"
+                    >
+                      <option value="">Select District</option>
+                      {Object.keys(STATES_DATA[editState] || {}).map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Mandal / City</label>
+                    <select 
+                      required 
+                      disabled={!editDistrict}
+                      value={editCity}
+                      onChange={(e) => setEditCity(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none disabled:opacity-50 text-slate-850 dark:text-slate-100"
+                    >
+                      <option value="">Select Mandal / City</option>
+                      {(STATES_DATA[editState]?.[editDistrict] || []).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Detailed Venue Address</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editAddress}
+                      onChange={(e) => setEditAddress(e.target.value)}
+                      placeholder="Street address, block/ward number"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:ring-1 focus:ring-primary-500 text-slate-850 dark:text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Pincode</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={editPincode}
+                      onChange={(e) => setEditPincode(e.target.value)}
+                      placeholder="560034"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none font-mono focus:ring-1 focus:ring-primary-500 text-slate-850 dark:text-slate-100"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button 
+                  type="button" 
+                  onClick={() => setShowEditProfileModal(false)}
+                  className="flex-grow py-3 bg-slate-100 dark:bg-dark-800 dark:text-slate-300 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-grow py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs transition-all shadow-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
     </div>
   );
