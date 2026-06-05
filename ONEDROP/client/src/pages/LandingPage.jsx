@@ -38,7 +38,7 @@ const FOUNDERS = [
     mission: 'Connecting 10 million eligible donors with zero transaction charges and transparent clinical screening pipelines.',
     contribution: 'Designed ONEDROP’s map-free cascading location database index logic.',
     image: '/jagadeeswar.png',
-    socials: { github: '#', linkedin: '#', instagram: '#' }
+    socials: { github: 'https://github.com/jagadeeswarreddy919', linkedin: 'https://www.linkedin.com/in/jagadeeswar-reddy-484343339/', instagram: '#' }
   },
   {
     name: 'Patnam Chinmaya Nanda',

@@ -155,9 +155,13 @@ const LoginPage = () => {
         user: response.data.user
       }));
 
-      const fcmToken = await requestFcmToken();
-      if (fcmToken) {
-        await saveFcmTokenToServer(fcmToken, response.data.token);
+      try {
+        const fcmToken = await requestFcmToken();
+        if (fcmToken) {
+          await saveFcmTokenToServer(fcmToken, response.data.token);
+        }
+      } catch (fcmErr) {
+        console.warn('[FCM Login Registration] Skipped or failed:', fcmErr.message);
       }
 
       if (typeof window !== 'undefined' && 'Notification' in window && response.data.greeting && Notification.permission === 'granted') {
@@ -214,9 +218,13 @@ const LoginPage = () => {
         user: response.data.user
       }));
 
-      const fcmToken = await requestFcmToken();
-      if (fcmToken) {
-        await saveFcmTokenToServer(fcmToken, response.data.token);
+      try {
+        const fcmToken = await requestFcmToken();
+        if (fcmToken) {
+          await saveFcmTokenToServer(fcmToken, response.data.token);
+        }
+      } catch (fcmErr) {
+        console.warn('[FCM Google Login Registration] Skipped or failed:', fcmErr.message);
       }
     } catch (err) {
       console.error(err);

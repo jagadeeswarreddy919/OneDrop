@@ -483,6 +483,8 @@ const AppShell = () => {
     if (isAuthenticated && token && !pushEnabled) {
       requestFcmToken().then((fcm) => {
         if (fcm) saveFcmTokenToServer(fcm, token);
+      }).catch((err) => {
+        console.warn('[App FCM Auto-Enable] Error:', err.message);
       });
     }
   }, [isAuthenticated, token, pushEnabled]);
