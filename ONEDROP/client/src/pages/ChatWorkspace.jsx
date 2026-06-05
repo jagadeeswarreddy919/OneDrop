@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useSearchParams, Link } from 'react-router-dom';
 import { socket } from '../utils/socket';
-import { MessageSquare, Send, Smile, Paperclip, CheckCheck, Loader2, ArrowLeft, Activity, Heart, Gift, Bell } from 'lucide-react';
+import { MessageSquare, Send, Smile, Paperclip, CheckCheck, Loader2, ArrowLeft, Activity, Heart, Gift, Bell, MapPin, FileText, X, Download } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../utils/api';
 
@@ -18,8 +18,14 @@ const ChatWorkspace = () => {
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState({});
 
+  // New features state
+  const [attachment, setAttachment] = useState(null);
+  const [attachmentPreview, setAttachmentPreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const messageEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Initialize Socket.IO connection
   useEffect(() => {
@@ -158,20 +164,65 @@ const ChatWorkspace = () => {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setAttachment(file);
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachmentPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAttachmentPreview('');
+    }
+  };
+
+  const handleRemoveAttachment = () => {
+    setAttachment(null);
+    setAttachmentPreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
+    if (e) e.preventDefault();
+    if (!inputText.trim() && !attachment) return;
+
+    setUploading(true);
 
     try {
-      const res = await axios.post(
-        `${API_URL}/api/chats/${activeChat._id}/messages`,
-        { text: inputText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      let res;
+      if (attachment) {
+        const formData = new FormData();
+        formData.append('text', inputText);
+        formData.append('file', attachment);
+
+        res = await axios.post(
+          `${API_URL}/api/chats/${activeChat._id}/messages`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
+      } else {
+        res = await axios.post(
+          `${API_URL}/api/chats/${activeChat._id}/messages`,
+          { text: inputText },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
 
       // Instantly push to UI
       setMessages((prev) => [...prev, res.data]);
       setInputText('');
+      handleRemoveAttachment();
 
       // Stop typing
       socket.emit('stop_typing', { chatId: activeChat._id, userId: user._id });
@@ -182,8 +233,52 @@ const ChatWorkspace = () => {
       fetchChats();
     } catch (err) {
       console.error(err);
+    } finally {
+      setUploading(false);
     }
   };
+
+  const handleShareLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        const locationMessage = `📍 Shared Coordinates Location:\n${mapLink}`;
+        
+        try {
+          const res = await axios.post(
+            `${API_URL}/api/chats/${activeChat._id}/messages`,
+            { text: locationMessage },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setMessages((prev) => [...prev, res.data]);
+          socket.emit('send_message', res.data);
+          fetchChats();
+        } catch (err) {
+          console.error("Failed to share location coordinates", err);
+        }
+      },
+      (error) => {
+        alert(`Failed to retrieve location: ${error.message}`);
+      }
+    );
+  };
+
+  const QUICK_PHRASES = [
+    "I'm on my way! 🚗",
+    "Which room / block number? 🏥",
+    "I have arrived at the blood bank.",
+    "Please give me a call when you are free.",
+    "I have successfully pledged! 🩸",
+    "Thank you so much! ❤️"
+  ];
+
+  const QUICK_EMOJIS = ['❤️', '👍', '🙏', '🩸', '🚨', '🏥', '😊'];
 
   const handleTyping = (e) => {
     setInputText(e.target.value);
@@ -327,7 +422,43 @@ const ChatWorkspace = () => {
                           ? 'bg-primary-600 text-white rounded-tr-none' 
                           : 'bg-white dark:bg-dark-800 border dark:border-dark-700 rounded-tl-none'
                       }`}>
-                        <p className="text-xs">{msg.text}</p>
+                        {msg.text && <p className="text-xs whitespace-pre-wrap">{msg.text}</p>}
+                        
+                        {/* Render Attachments */}
+                        {msg.fileUrl && msg.fileType === 'image' && (
+                          <img 
+                            src={`${API_URL}${msg.fileUrl}`} 
+                            alt="Chat Attachment" 
+                            className="max-w-[200px] sm:max-w-[240px] max-h-[200px] object-cover rounded-xl mt-1.5 cursor-pointer border border-black/10 hover:opacity-95 transition-opacity" 
+                            onClick={() => setPreviewImage(`${API_URL}${msg.fileUrl}`)}
+                          />
+                        )}
+                        {msg.fileUrl && msg.fileType !== 'image' && msg.fileType !== 'none' && (
+                          <div className={`flex items-center gap-2 mt-2 p-2 rounded-xl border ${
+                            isMine 
+                              ? 'bg-primary-700/50 border-primary-500' 
+                              : 'bg-slate-50 dark:bg-dark-855 border-slate-200 dark:border-slate-750'
+                          }`}>
+                            <FileText className="w-5 h-5 text-rose-500 shrink-0" />
+                            <div className="min-w-0 flex-grow text-[10px]">
+                              <p className="font-bold truncate">{msg.fileUrl.split('/').pop().replace(/^\d+-/, '')}</p>
+                              <span className="text-[8px] text-slate-400">Document</span>
+                            </div>
+                            <a
+                              href={`${API_URL}${msg.fileUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isMine 
+                                  ? 'hover:bg-primary-600/50 text-white' 
+                                  : 'hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 dark:text-slate-400'
+                              }`}
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </div>
+                        )}
                         
                         {/* Read Receipts */}
                         {isMine && (
@@ -364,24 +495,123 @@ const ChatWorkspace = () => {
                   </div>
                 );
               })}
+              
+              {/* Typing indicator bubble */}
+              {otherUserTyping && (
+                <div className="flex justify-start items-center gap-2">
+                  <div className="bg-white dark:bg-dark-800 border dark:border-dark-750 p-3 rounded-2xl rounded-tl-none max-w-max flex items-center gap-1.5 text-slate-400">
+                    <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              )}
+              
               <div ref={messageEndRef} />
             </div>
 
+            {/* Quick Phrases selection list */}
+            <div className="px-4 py-2 bg-slate-50 dark:bg-dark-800/40 border-t flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-thin">
+              {QUICK_PHRASES.map((phrase, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setInputText((prev) => prev ? `${prev} ${phrase}` : phrase)}
+                  className="px-3 py-1.5 bg-white dark:bg-dark-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-750 transition-colors shrink-0"
+                >
+                  {phrase}
+                </button>
+              ))}
+            </div>
+
             {/* Typing input selector */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-3 items-center">
-              <input
-                type="text"
-                value={inputText}
-                onChange={handleTyping}
-                placeholder="Type your message..."
-                className="flex-grow p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:ring-1 focus:ring-primary-500"
-              />
-              <button 
-                type="submit" 
-                className="p-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-md transition-all"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+            <form onSubmit={handleSendMessage} className="p-4 border-t flex flex-col gap-3 bg-white dark:bg-dark-900">
+              
+              {/* Attachment Preview UI */}
+              {attachment && (
+                <div className="flex items-center gap-3 bg-slate-100 dark:bg-dark-800 p-2 rounded-xl border dark:border-dark-750 max-w-max">
+                  {attachmentPreview ? (
+                    <img src={attachmentPreview} alt="Attachment preview" className="w-12 h-12 object-cover rounded-lg border" />
+                  ) : (
+                    <div className="w-12 h-12 flex items-center justify-center bg-slate-200 dark:bg-dark-700 rounded-lg border">
+                      <FileText className="w-6 h-6 text-slate-500" />
+                    </div>
+                  )}
+                  <div className="min-w-0 max-w-[150px]">
+                    <p className="text-[10px] font-bold truncate">{attachment.name}</p>
+                    <p className="text-[8px] text-slate-400">{(attachment.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveAttachment}
+                    className="p-1 hover:bg-slate-200 dark:hover:bg-dark-750 rounded-full text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                />
+                
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-xl transition-all"
+                  title="Attach File"
+                >
+                  <Paperclip className="w-4.5 h-4.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleShareLocation}
+                  className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-xl transition-all"
+                  title="Share Coordinates Location"
+                >
+                  <MapPin className="w-4.5 h-4.5" />
+                </button>
+
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={handleTyping}
+                  placeholder="Type your message..."
+                  className="flex-grow p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:ring-1 focus:ring-primary-500"
+                  disabled={uploading}
+                />
+
+                <div className="hidden sm:flex items-center gap-1.5 px-1">
+                  {QUICK_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setInputText((prev) => prev + emoji)}
+                      className="hover:scale-125 transition-transform text-sm p-0.5"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={uploading}
+                  className="p-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center shrink-0"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4.5 h-4.5 animate-spin" />
+                  ) : (
+                    <Send className="w-4.5 h-4.5" />
+                  )}
+                </button>
+              </div>
             </form>
           </>
         ) : (
@@ -413,6 +643,25 @@ const ChatWorkspace = () => {
           );
         })}
       </div>
+      
+      {/* Fullscreen Image Zoom Overlay */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img src={previewImage} alt="Fullscreen preview" className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl" />
+            <button 
+              type="button" 
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-10 right-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
