@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { updateProfileSuccess, logout } from '../redux/authSlice';
 import { 
   Heart, Activity, FileText, CheckCircle, Clock, 
   ShieldAlert, MessageSquare, X, Search, Filter, Sparkles, 
   Phone, Award, Bell, AlertCircle, HelpCircle, MapPin,
-  RefreshCw, Loader2, Printer, Users, Compass, Globe, Layout
+  RefreshCw, Loader2, Printer, Users, Compass, Globe, Layout, Home
 } from 'lucide-react';
 import { 
   firebaseSendEmailVerification, 
@@ -1966,6 +1966,45 @@ const RecipientDashboard = () => {
         </div>
       )}
         </div>
+      </div>
+
+      {/* Floating Bottom Nav for Mobile Devices */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-850 py-2 px-6 flex justify-around md:hidden print:hidden">
+        {[
+          { id: 'main-home', label: 'Home', icon: Home, path: '/' },
+          { id: 'requests', label: 'Requests', icon: FileText },
+          { id: 'smartMatch', label: 'Match', icon: Sparkles },
+          { id: 'bloodbanks', label: 'Banks', icon: Compass }
+        ].map((item) => {
+          const ItemIcon = item.icon;
+          const isActive = activeTab === item.id;
+
+          if (item.path) {
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                className="flex flex-col items-center gap-1 text-[10px] font-extrabold transition-all hover:scale-110 active:scale-95 text-slate-400 dark:text-slate-500 hover:text-rose-500"
+              >
+                <ItemIcon className="w-5.5 h-5.5" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+              }}
+              className={`flex flex-col items-center gap-1 text-[10px] font-extrabold transition-all hover:scale-110 active:scale-95 ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 dark:text-slate-500'}`}
+            >
+              <ItemIcon className="w-5.5 h-5.5" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

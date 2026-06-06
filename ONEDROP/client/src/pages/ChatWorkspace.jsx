@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useSearchParams, Link } from 'react-router-dom';
 import { socket } from '../utils/socket';
-import { MessageSquare, Send, Smile, Paperclip, CheckCheck, Loader2, ArrowLeft, Activity, Heart, Gift, Bell, MapPin, FileText, X, Download } from 'lucide-react';
+import { MessageSquare, Send, Smile, Paperclip, CheckCheck, Loader2, ArrowLeft, Activity, Heart, Gift, Bell, MapPin, FileText, X, Download, Home } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../utils/api';
 
@@ -625,7 +625,8 @@ const ChatWorkspace = () => {
       {/* Floating Bottom Nav for Mobile Devices */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-850 py-2 px-6 flex justify-around md:hidden print:hidden">
         {[
-          { id: 'dashboard', label: 'Home', icon: Activity, path: getDashboardLink() },
+          { id: 'main-home', label: 'Home', icon: Home, path: '/' },
+          { id: 'dashboard', label: 'Dashboard', icon: Activity, path: getDashboardLink() },
           { id: 'requests', label: 'Feed', icon: Heart, path: getDashboardLink('requests') },
           { id: 'rewards', label: 'Wallet', icon: Gift, path: getDashboardLink('rewards') },
           { id: 'notifications', label: 'Alerts', icon: Bell, path: getDashboardLink('notifications') }

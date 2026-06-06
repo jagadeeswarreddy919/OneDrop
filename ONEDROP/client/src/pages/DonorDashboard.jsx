@@ -8,7 +8,8 @@ import {
   Clipboard, Download, Check, MessageSquare, Printer, X, ShieldAlert, 
   Bell, Settings, Layout, Users, Star, TrendingUp, Info, HelpCircle, 
   MapPin, CheckCircle, Clock, Gift, BookOpen, ChevronRight, Menu, ArrowRight,
-  RefreshCw, Loader2, Sparkles, Plus, FileText, Globe, Compass, Phone, Search
+  RefreshCw, Loader2, Sparkles, Plus, FileText, Globe, Compass, Phone, Search,
+  Home, Smartphone, Laptop
 } from 'lucide-react';
 import { 
   firebaseSendEmailVerification, 
@@ -440,6 +441,56 @@ const DonorDashboard = () => {
   useEffect(() => {
     localStorage.setItem('pushAlerts', JSON.stringify(pushAlerts));
   }, [pushAlerts]);
+
+  // PWA App Installation States
+  const [deferredPrompt, setDeferredPrompt] = useState(window.deferredPrompt || null);
+  const [isPwaInstalled, setIsPwaInstalled] = useState(
+    window.matchMedia('(display-mode: standalone)').matches || 
+    window.navigator.standalone || 
+    false
+  );
+  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      window.deferredPrompt = e;
+    };
+
+    const handleAppInstalled = () => {
+      setIsPwaInstalled(true);
+      setDeferredPrompt(null);
+      window.deferredPrompt = null;
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleMediaChange = (e) => {
+      setIsPwaInstalled(e.matches);
+    };
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      mediaQuery.removeEventListener('change', handleMediaChange);
+    };
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to PWA install prompt: ${outcome}`);
+      setDeferredPrompt(null);
+      window.deferredPrompt = null;
+    } else {
+      setShowInstallInstructions(true);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -1695,15 +1746,33 @@ const DonorDashboard = () => {
 
                   {/* Rewards wallet & dynamic PWA install alert block */}
                   <div className="p-6 bg-slate-900 text-white rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/10 rounded-full blur-2xl"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/10 rounded-full blur-2xl"></div>
                     <div className="space-y-1 text-center sm:text-left">
-                      <span className="px-2.5 py-0.5 text-[8px] font-black uppercase bg-primary-500 rounded-full tracking-widest">Install App</span>
-                      <h4 className="font-extrabold text-sm mt-1">Access ONEDROP Offline Anytime</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">Save shortcuts on your screen for seamless offline hospital match notifications without internet bandwidth.</p>
+                      <span className={`px-2.5 py-0.5 text-[8px] font-black uppercase rounded-full tracking-widest ${isPwaInstalled ? 'bg-emerald-500 text-white' : 'bg-primary-500'}`}>
+                        {isPwaInstalled ? '✓ App Installed' : 'Install App'}
+                      </span>
+                      <h4 className="font-extrabold text-sm mt-1 font-sans">
+                        {isPwaInstalled ? 'ONEDROP Desktop & Mobile App' : 'Access ONEDROP Offline Anytime'}
+                      </h4>
+                      <p className="text-xs text-slate-400 leading-relaxed font-semibold">
+                        {isPwaInstalled 
+                          ? 'Running in standalone native application mode. Live database proximity logs and real-time push alerts are fully active.'
+                          : 'Save shortcuts on your screen for seamless offline hospital match notifications without internet bandwidth.'
+                        }
+                      </p>
                     </div>
-                    <button onClick={() => alert('Install triggers skipped inside standard web browsers.')} className="px-5 py-2.5 bg-white text-slate-900 font-extrabold text-xs rounded-xl hover:shadow-lg transition-all flex-shrink-0">
-                      Install PWA App
-                    </button>
+                    {isPwaInstalled ? (
+                      <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-black text-xs rounded-xl flex-shrink-0">
+                        <Check className="w-4 h-4 text-emerald-400" /> Offline Ready
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={handleInstallPWA} 
+                        className="px-5 py-2.5 bg-white text-slate-900 font-extrabold text-xs rounded-xl hover:shadow-lg transition-all flex-shrink-0"
+                      >
+                        Install PWA App
+                      </button>
+                    )}
                   </div>
 
                 </div>
@@ -3284,13 +3353,28 @@ const DonorDashboard = () => {
       {/* Floating Bottom Nav for Mobile Devices */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-850 py-2 px-6 flex justify-around md:hidden print:hidden">
         {[
-          { id: 'dashboard', label: 'Home', icon: Activity },
+          { id: 'main-home', label: 'Home', icon: Home, path: '/' },
+          { id: 'dashboard', label: 'Dashboard', icon: Activity },
           { id: 'requests', label: 'Feed', icon: Heart },
           { id: 'rewards', label: 'Wallet', icon: Gift },
           { id: 'notifications', label: 'Alerts', icon: Bell }
         ].map((item) => {
           const ItemIcon = item.icon;
           const isActive = activeTab === item.id;
+
+          if (item.path) {
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                className="flex flex-col items-center gap-1 text-[10px] font-extrabold transition-all hover:scale-110 active:scale-95 text-slate-400 dark:text-slate-500 hover:text-rose-500"
+              >
+                <ItemIcon className="w-5.5 h-5.5" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          }
+
           return (
             <button
               key={item.id}
@@ -3632,6 +3716,77 @@ const DonorDashboard = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* PWA Manual Install Instructions Modal */}
+      {showInstallInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in print:hidden">
+          <div className="relative w-full max-w-md bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-2xl space-y-6">
+            <button 
+              onClick={() => setShowInstallInstructions(false)}
+              className="absolute top-6 right-6 p-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-full text-slate-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 bg-rose-100 dark:bg-rose-950/30 text-rose-500 rounded-full flex items-center justify-center">
+                <Download className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-black">Install ONEDROP App</h3>
+              <p className="text-xs text-slate-500 font-semibold">Add ONEDROP to your home screen for quick offline access and instant push alerts.</p>
+            </div>
+
+            {/* Platform specific detection */}
+            <div className="space-y-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              {/iPhone|iPad|iPod/i.test(navigator.userAgent) ? (
+                <div className="bg-slate-50 dark:bg-dark-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                  <p className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Smartphone className="w-4 h-4 text-primary-500" /> iOS & Safari Guide:
+                  </p>
+                  <ol className="list-decimal list-inside space-y-2 text-slate-500 dark:text-slate-400 pl-1 leading-relaxed">
+                    <li>Tap the <span className="font-black text-slate-800 dark:text-white">Share button</span> (square with upward arrow) in the Safari toolbar.</li>
+                    <li>Scroll down the options list and tap <span className="font-black text-slate-800 dark:text-white">"Add to Home Screen"</span>.</li>
+                    <li>Confirm by tapping <span className="font-black text-slate-800 dark:text-white">"Add"</span> in the top-right corner.</li>
+                  </ol>
+                </div>
+              ) : (
+                <div className="bg-slate-50 dark:bg-dark-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                  <p className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Laptop className="w-4 h-4 text-primary-500" /> Browser Install Guide:
+                  </p>
+                  <ol className="list-decimal list-inside space-y-2 text-slate-500 dark:text-slate-400 pl-1 leading-relaxed">
+                    <li>Look for the <span className="font-black text-slate-800 dark:text-white">install/download icon</span> (usually an arrow pointing down or a plus sign) in your browser's address bar.</li>
+                    <li>Or click the <span className="font-black text-slate-800 dark:text-white">menu button</span> (three dots or lines) at the top-right/bottom of the browser.</li>
+                    <li>Select <span className="font-black text-slate-800 dark:text-white">"Install ONEDROP..."</span> or <span className="font-black text-slate-800 dark:text-white">"Add to Home screen"</span>.</li>
+                  </ol>
+                </div>
+              )}
+
+              {/* Technical features listing */}
+              <div className="grid grid-cols-2 gap-3 pt-2 text-[10px] text-slate-400 font-bold">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Live Match Alerts
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Offline Mode Setup
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Zero Data Cost
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Auto Updates
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowInstallInstructions(false)}
+              className="w-full py-2.5 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md"
+            >
+              Got It
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
