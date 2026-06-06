@@ -141,6 +141,56 @@ setInterval(async () => {
   }
 }, 5 * 60 * 1000);
 
+// Auto-cleanup notifications created before today's midnight
+const Notification = require('./models/Notification');
+
+const runNotificationCleanup = async () => {
+  try {
+    const now = new Date();
+    // Midnight of the current day in local server time
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const result = await Notification.deleteMany({
+      createdAt: { $lt: todayMidnight }
+    });
+    console.log(`[Auto-Cleanup] Running notifications cleanup (deleting prior to ${todayMidnight.toLocaleString()}). Deleted: ${result.deletedCount}`);
+  } catch (err) {
+    console.error(`[Auto-Cleanup] Failed to run notifications cleanup: ${err.message}`);
+  }
+};
+
+// 1. Startup cleanup check (runs 10 seconds after server boots)
+setTimeout(() => {
+  console.log('[Scheduler] Executing startup notification cleanup...');
+  runNotificationCleanup();
+}, 10 * 1000);
+
+// 2. Hourly fallback cleanup check
+setInterval(() => {
+  console.log('[Scheduler] Executing hourly fallback notification cleanup...');
+  runNotificationCleanup();
+}, 60 * 60 * 1000);
+
+// 3. Exact midnight cleanup scheduler
+function scheduleNextMidnightCleanup() {
+  const now = new Date();
+  const nextMidnight = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1, // Tomorrow
+    0, 0, 0, 0 // 12:00 AM
+  );
+  const msToMidnight = nextMidnight.getTime() - now.getTime();
+  
+  console.log(`[Scheduler] Next exact midnight notification cleanup scheduled in ${(msToMidnight / 1000 / 60 / 60).toFixed(2)} hours (at ${nextMidnight.toLocaleString()}).`);
+  
+  setTimeout(async () => {
+    console.log('[Scheduler] Executing scheduled midnight notification cleanup...');
+    await runNotificationCleanup();
+    scheduleNextMidnightCleanup(); // Reschedule for next midnight
+  }, msToMidnight);
+}
+scheduleNextMidnightCleanup();
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`========================================`);
