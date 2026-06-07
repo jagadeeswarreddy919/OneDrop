@@ -182,10 +182,10 @@ const HospitalDashboard = () => {
   const [emergencyMode, setEmergencyMode] = useState(false);
   const [reason, setReason] = useState('');
 
-  // Geographics for blood request pre-populated from hospital profile
-  const [reqState, setReqState] = useState(normalizeState(user?.state || ''));
-  const [reqDistrict, setReqDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
-  const [reqCity, setReqCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
+  // Geographics for blood request
+  const [reqState, setReqState] = useState('');
+  const [reqDistrict, setReqDistrict] = useState('');
+  const [reqCity, setReqCity] = useState('');
   const [reqPincode, setReqPincode] = useState(user?.pincode || '');
   const [reqHospitalAddress, setReqHospitalAddress] = useState(user?.address || '');
 
@@ -388,9 +388,7 @@ const HospitalDashboard = () => {
       setDistrict(normalizeDistrict(user.state || '', user.district || ''));
       setCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
 
-      setReqState(normalizeState(user.state || ''));
-      setReqDistrict(normalizeDistrict(user.state || '', user.district || ''));
-      setReqCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
+
 
       // Set edit profile states
       setEditName(user.fullName || '');
@@ -465,6 +463,9 @@ const HospitalDashboard = () => {
       setNeededBy('');
       setEmergencyMode(false);
       setReason('');
+      setReqState('');
+      setReqDistrict('');
+      setReqCity('');
       fetchMyRequests();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to submit request.');
