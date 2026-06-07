@@ -368,8 +368,8 @@ def create_presentation():
             "points": [
                 "Gamified Reward Points & verified donor validation badges.",
                 "Real-time toggles for donor active availability status.",
-                "Comprehensive medical documentation & upload interface.",
-                "Upcoming campaign registrations and historic timeline."
+                "Quick matching donors modal for published request tickets.",
+                "⚡ Contact Fast with Call, Chat, WhatsApp, & custom alerts."
             ],
             "accent": EMERALD
         },
@@ -378,18 +378,18 @@ def create_presentation():
             "points": [
                 "Real-time blood stock levels and storage management.",
                 "Predictive analytics panel predicting regional shortage levels.",
-                "Advanced donor directory with proximity filtering.",
-                "Official campaign builder and notification broadcasts."
+                "⚡ Contact Fast: Proximity matching donors modal trigger.",
+                "Build & publish donation campaigns with instant alerts."
             ],
             "accent": CRIMSON
         },
         {
             "name": "Recipient & Admin",
             "points": [
-                "Fast, clean blood emergency requests generation wizard.",
-                "P2P direct chat hub for immediate donor coordinate sessions.",
-                "Admin audit logs, campaign moderation, and user checks.",
-                "Comprehensive visual metrics representing platform status."
+                "Clean emergency request creation with instant matches popup.",
+                "⚡ Contact Fast shortcuts (Call, Chat, WhatsApp, Alert).",
+                "Admin audit logs, campaign moderation, and system checks.",
+                "Interactive chat workspace with attachment & GPS sharing."
             ],
             "accent": AMBER
         }

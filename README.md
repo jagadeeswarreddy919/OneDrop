@@ -6,7 +6,7 @@
 
 ## 🌟 Key Features
 
-- **🎯 Smart Blood Matching**: Real-time notifications dispatched to compatible donors using WebSockets (Socket.IO) and Firebase Cloud Messaging (FCM) based on proximity, blood group compatibility, and regional availability.
+- **🎯 Smart Blood Matching**: Real-time proximity compatibility scanning with dynamic popup lists appearing right after a request is created. Access the **⚡ Contact Fast** panel at any time from your ticket dashboard to coordinate immediately via voice calls (`tel:`), secure chat workspaces, direct WhatsApp pre-filled coordination links, and database-level push notifications.
 - **🛡️ Enforced Security Framework**: Email verification checkpoints at sign-in, account role verification (Donor, Recipient, Hospital, Admin, Super Admin), and automated JWT session expiration defenses.
 - **💬 Secure Real-Time Chat**: Direct instant messaging channel between donors and recipients with custom status indicators, read receipts, and interactive emoji reactions.
 - **📈 Advanced Analytics (Java/Spring Boot)**: Predictive regional metrics, hospital blood inventory levels, and live donation statistics.
