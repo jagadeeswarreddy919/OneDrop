@@ -383,6 +383,7 @@ const DonorDashboard = () => {
   const [accent, setAccent] = useState('red');
   const [compact, setCompact] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Availability, SOS Panic alert and volunteer settings
   const [availability, setAvailability] = useState(user?.availability ?? true);
@@ -1683,17 +1684,25 @@ const DonorDashboard = () => {
           {/* Dynamic Customized Header Greeting */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-dark-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/5 rounded-full blur-3xl -z-10"></div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <span>ONEDROP Enterprise Hub</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              </p>
-              <h1 className="text-2xl md:text-3xl font-black mt-1">
-                {getTimeBasedGreeting(lang)}, {user?.fullName?.split(' ')[0]} ❤️
-              </h1>
-              <p className="text-xs text-slate-500 mt-1">
-                Fulfilled pledges: <span className="font-extrabold text-emerald-500">{fulfilledPledges}</span> • Pending regional requests: <span className="font-extrabold text-primary-500">{nearbyRequests.length}</span>
-              </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden p-2 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-200 rounded-xl transition-all flex-shrink-0"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <span>ONEDROP Enterprise Hub</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                </p>
+                <h1 className="text-2xl md:text-3xl font-black mt-1">
+                  {getTimeBasedGreeting(lang)}, {user?.fullName?.split(' ')[0]} ❤️
+                </h1>
+                <p className="text-xs text-slate-500 mt-1">
+                  Fulfilled pledges: <span className="font-extrabold text-emerald-500">{fulfilledPledges}</span> • Pending regional requests: <span className="font-extrabold text-primary-500">{nearbyRequests.length}</span>
+                </p>
+              </div>
             </div>
 
             {/* Quick Actions Dropdowns */}
@@ -3593,6 +3602,101 @@ const DonorDashboard = () => {
         </button>
       </div>
 
+      {/* Mobile Drawer (Slide Bar) */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
+            />
+            {/* Slide-out Panel */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw] bg-white dark:bg-dark-900 shadow-2xl flex flex-col justify-between p-6 border-r border-slate-200 dark:border-slate-800 md:hidden"
+            >
+              <div className="space-y-6">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <span className="text-[10px] font-black tracking-widest uppercase text-slate-400">Main Console</span>
+                    <h2 className="text-sm font-black text-slate-800 dark:text-slate-200">ONEDROP Dashboard</h2>
+                  </div>
+                  <button 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-lg text-slate-500"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <nav className="space-y-1.5 overflow-y-auto max-h-[70vh] scrollbar-none pr-1">
+                  {[
+                    { id: 'dashboard', label: 'Dashboard', icon: Activity },
+                    { id: 'requests', label: 'Blood Requests', icon: Heart, badge: nearbyRequests.length },
+                    { id: 'smartMatch', label: 'Smart Match Finder', icon: Sparkles },
+                    { id: 'donations', label: 'Donations', icon: Calendar },
+                    { id: 'rewards', label: 'Rewards', icon: Gift },
+                    { id: 'referrals', label: 'Referrals', icon: Share2 },
+                    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+                    { id: 'community', label: 'Community', icon: Users },
+                    { id: 'campaigns', label: 'Campaigns', icon: BookOpen },
+                    { id: 'notifications', label: 'Notifications', icon: Bell, badge: logs.filter(l => l.unread).length },
+                    { id: 'bloodbanks', label: 'Blood Banks', icon: Compass },
+                    { id: 'settings', label: 'Settings', icon: Settings }
+                  ].map((item) => {
+                    const IconComp = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveTab(item.id);
+                          setSearchParams({ tab: item.id });
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all ${
+                          isActive 
+                            ? `${uiTheme.bg} text-white shadow-lg ${uiTheme.glow}` 
+                            : 'hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <IconComp className="w-5 h-5 flex-shrink-0" />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge > 0 && (
+                          <span className={`px-2 py-0.5 text-[9px] rounded-full font-extrabold ${isActive ? 'bg-white text-slate-900' : 'bg-red-500 text-white'}`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* Sidebar Footer User Badge */}
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-dark-800 flex items-center justify-center font-black text-primary-500 border-2 border-primary-500">
+                  {user?.fullName?.charAt(0)}
+                </div>
+                <div className="text-left text-xs truncate max-w-[140px]">
+                  <p className="font-extrabold dark:text-slate-200">{user?.fullName}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">{rankObj.rank}</p>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Floating Bottom Nav for Mobile Devices */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-850 py-2 px-6 flex justify-around md:hidden print:hidden">
         {[
@@ -3600,7 +3704,8 @@ const DonorDashboard = () => {
           { id: 'dashboard', label: 'Dashboard', icon: Activity },
           { id: 'requests', label: 'Feed', icon: Heart },
           { id: 'rewards', label: 'Wallet', icon: Gift },
-          { id: 'notifications', label: 'Alerts', icon: Bell }
+          { id: 'notifications', label: 'Alerts', icon: Bell },
+          { id: 'menu', label: 'Menu', icon: Menu, action: () => setMobileMenuOpen(true) }
         ].map((item) => {
           const ItemIcon = item.icon;
           const isActive = activeTab === item.id;
@@ -3615,6 +3720,19 @@ const DonorDashboard = () => {
                 <ItemIcon className="w-5.5 h-5.5" />
                 <span>{item.label}</span>
               </Link>
+            );
+          }
+
+          if (item.action) {
+            return (
+              <button
+                key={item.id}
+                onClick={item.action}
+                className="flex flex-col items-center gap-1 text-[10px] font-extrabold transition-all hover:scale-110 active:scale-95 text-slate-400 dark:text-slate-500 hover:text-rose-500"
+              >
+                <ItemIcon className="w-5.5 h-5.5" />
+                <span>{item.label}</span>
+              </button>
             );
           }
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldAlert, Activity, ClipboardList, Database, Save, CalendarRange, 
   Plus, Heart, MessageSquare, Phone, MapPin, X, RefreshCw, Loader2,
-  Printer, Search, Award, Users, Sparkles, AlertCircle
+  Printer, Search, Award, Users, Sparkles, AlertCircle, Menu
 } from 'lucide-react';
 import { updateProfileSuccess, logout } from '../redux/authSlice';
 import { 
@@ -66,6 +67,7 @@ const HospitalDashboard = () => {
 
   // New tab controller for the left-hand column/main view
   const [activeTab, setActiveTab] = useState('operations'); // 'operations' | 'donorRegistry' | 'browseRequests'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [nearbyRequests, setNearbyRequests] = useState([]);
 
@@ -707,25 +709,33 @@ const HospitalDashboard = () => {
       
       <div className="p-8 bg-slate-900 text-white rounded-3xl shadow-xl flex justify-between items-center relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/10 rounded-full blur-3xl -z-10"></div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 text-[10px] font-black uppercase bg-primary-500 rounded-full">Hospital Dashboard</span>
-            {user?.isVerifiedHospital ? (
-              <span className="px-3 py-1 text-[10px] font-black uppercase bg-emerald-600 rounded-full">Verified Medical Partner</span>
-            ) : (
-              <span className="px-3 py-1 text-[10px] font-black uppercase bg-amber-600 rounded-full">Verification Pending</span>
-            )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden p-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white transition-all shadow-sm flex-shrink-0"
+          >
+            <Menu className="w-5.5 h-5.5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 text-[10px] font-black uppercase bg-primary-500 rounded-full">Hospital Dashboard</span>
+              {user?.isVerifiedHospital ? (
+                <span className="px-3 py-1 text-[10px] font-black uppercase bg-emerald-600 rounded-full">Verified Medical Partner</span>
+              ) : (
+                <span className="px-3 py-1 text-[10px] font-black uppercase bg-amber-600 rounded-full">Verification Pending</span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <h1 className="text-3xl font-black">{user.fullName}</h1>
+              <button 
+                onClick={() => setShowEditProfileModal(true)}
+                className="px-3 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold transition-all shadow-sm"
+              >
+                Edit Profile Coordinates
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">License ID: {user.hospitalLicenseNumber || 'Pending'} • Location: {user.city}, {user.state}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3 mt-2">
-            <h1 className="text-3xl font-black">{user.fullName}</h1>
-            <button 
-              onClick={() => setShowEditProfileModal(true)}
-              className="px-3 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold transition-all shadow-sm"
-            >
-              Edit Profile Coordinates
-            </button>
-          </div>
-          <p className="text-xs text-slate-400">License ID: {user.hospitalLicenseNumber || 'Pending'} • Location: {user.city}, {user.state}</p>
         </div>
       </div>
 
@@ -2101,6 +2111,86 @@ const HospitalDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Mobile Drawer (Slide Bar) */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
+            />
+            {/* Slide-out Panel */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw] bg-white dark:bg-dark-900 shadow-2xl flex flex-col justify-between p-6 border-r border-slate-200 dark:border-slate-800 md:hidden"
+            >
+              <div className="space-y-6">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <span className="text-[10px] font-black tracking-widest uppercase text-slate-400">Hospital Console</span>
+                    <h2 className="text-sm font-black text-slate-800 dark:text-slate-200">ONEDROP Dashboard</h2>
+                  </div>
+                  <button 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-lg text-slate-500"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <nav className="space-y-1.5 overflow-y-auto max-h-[70vh] scrollbar-none pr-1">
+                  {[
+                    { id: 'operations', label: 'Operations', icon: Activity },
+                    { id: 'donorRegistry', label: 'Smart Match Finder', icon: Users },
+                    { id: 'browseRequests', label: 'Browse Regional Requests', icon: Heart }
+                  ].map((item) => {
+                    const IconComp = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveTab(item.id);
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all ${
+                          isActive 
+                            ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' 
+                            : 'hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <IconComp className="w-5 h-5 flex-shrink-0" />
+                          <span>{item.label}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* Sidebar Footer User Badge */}
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-dark-800 flex items-center justify-center font-black text-primary-500 border-2 border-primary-500">
+                  {user?.fullName?.charAt(0)}
+                </div>
+                <div className="text-left text-xs truncate max-w-[140px]">
+                  <p className="font-extrabold dark:text-slate-200">{user?.fullName}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Hospital Portal</p>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

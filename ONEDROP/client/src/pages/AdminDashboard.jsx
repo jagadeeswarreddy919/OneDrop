@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldCheck, Users, Activity, FileText, Database, ShieldAlert, Award, 
   BrainCircuit, TrendingUp, Download, Heart, Megaphone, Calendar, MapPin, 
   Gift, RefreshCw, BarChart2, Plus, Trash2, Key, Info, Check, X, AlertTriangle, Play, Hospital, Image,
-  Globe, Search, Phone, MessageSquare
+  Globe, Search, Phone, MessageSquare, Menu
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, AreaChart, Area } from 'recharts';
 import axios from 'axios';
@@ -23,6 +24,7 @@ const AdminDashboard = () => {
 
   // Active UI Navigation state
   const [activePanel, setActivePanel] = useState('Analytics Dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Loading States
   const [loading, setLoading] = useState(true);
@@ -672,14 +674,22 @@ const AdminDashboard = () => {
       {/* Enterprise Title Block */}
       <div className="p-8 bg-slate-900 text-white rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden border border-slate-800">
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-600/10 rounded-full blur-3xl -z-10"></div>
-        <div>
-          <span className="px-3.5 py-1 text-[10px] font-black uppercase tracking-wider bg-primary-500 text-white rounded-full">Secure Enterprise Controller</span>
-          <h1 className="text-3xl font-black mt-2 tracking-tight">ONEDROP Command Center</h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-xl">Supervise emergency blood lifelines, evaluate machine learning shortage models, audit security permissions, and direct platform activities.</p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="lg:hidden p-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white transition-all shadow-sm flex-shrink-0"
+          >
+            <Menu className="w-5.5 h-5.5" />
+          </button>
+          <div>
+            <span className="px-3.5 py-1 text-[10px] font-black uppercase tracking-wider bg-primary-500 text-white rounded-full">Secure Enterprise Controller</span>
+            <h1 className="text-3xl font-black mt-2 tracking-tight">ONEDROP Command Center</h1>
+            <p className="text-xs text-slate-400 mt-1 max-w-xl">Supervise emergency blood lifelines, evaluate machine learning shortage models, audit security permissions, and direct platform activities.</p>
+          </div>
         </div>
         <button
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg hover:shadow-emerald-900/30 active:scale-95"
+          className="flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg hover:shadow-emerald-900/30 active:scale-95 w-full md:w-auto justify-center"
         >
           <Download className="w-4 h-4" /> Export User CSV Backup
         </button>
@@ -2380,6 +2390,87 @@ const AdminDashboard = () => {
         </div>
       )}
 
+
+      {/* Mobile Drawer (Slide Bar) */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+            />
+            {/* Slide-out Panel */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw] bg-white dark:bg-dark-900 shadow-2xl flex flex-col justify-between p-6 border-r border-slate-200 dark:border-slate-800 lg:hidden"
+            >
+              <div className="space-y-6 flex-grow flex flex-col min-h-0">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+                  <div>
+                    <span className="text-[10px] font-black tracking-widest uppercase text-slate-400">Enterprise Console</span>
+                    <h2 className="text-sm font-black text-slate-800 dark:text-slate-200">Command Center</h2>
+                  </div>
+                  <button 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-lg text-slate-500"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-6 overflow-y-auto flex-grow scrollbar-none pr-1">
+                  {menuTiers.map((tier, tIdx) => (
+                    <div key={tIdx} className="space-y-2">
+                      <h4 className="text-[9px] font-black tracking-widest text-slate-400 uppercase border-b pb-1 dark:border-slate-800">{tier.title}</h4>
+                      <nav className="flex flex-col gap-1">
+                        {tier.items.map((item) => {
+                          const IconComp = item.icon;
+                          const isActive = activePanel === item.name;
+                          return (
+                            <button
+                              key={item.name}
+                              onClick={() => {
+                                setActivePanel(item.name);
+                                setMobileMenuOpen(false);
+                              }}
+                              className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-[11px] font-bold transition-all ${
+                                isActive 
+                                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/20' 
+                                  : 'hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-600 dark:text-slate-300'
+                              }`}
+                            >
+                              <IconComp className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : item.color}`} />
+                              <span>{item.name}</span>
+                            </button>
+                          );
+                        })}
+                      </nav>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sidebar Footer User Badge */}
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center gap-3 flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-dark-800 flex items-center justify-center font-black text-primary-500 border-2 border-primary-500">
+                  A
+                </div>
+                <div className="text-left text-xs truncate max-w-[140px]">
+                  <p className="font-extrabold dark:text-slate-200">Super Administrator</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Root Control</p>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
