@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { loginSuccess } from '../redux/authSlice';
 import { STATES_DATA } from '../utils/statesData';
+import { sendWelcomeEmail } from '../utils/emailjs';
 
 // Yup validation schema tailored strictly to role requirements
 const schema = yup.object().shape({
@@ -305,6 +306,14 @@ const RegisterPage = () => {
       } catch (fcmErr) {
         console.warn('[Register] FCM auto-enable failed or permission denied:', fcmErr.message);
       }
+
+      // Send Welcome Greeting Email via EmailJS upon successful registration
+      sendWelcomeEmail({
+        to_name: data.fullName,
+        to_email: data.email,
+        user_role: data.role,
+        reward_points: response.data.user?.rewardPoints || 50
+      }).catch(emailErr => console.warn('[Register] EmailJS welcome email send failed:', emailErr));
 
       setSuccessUser({
         fullName: data.fullName,
