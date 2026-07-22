@@ -646,15 +646,21 @@ exports.searchDonors = async (req, res) => {
       try { query._id = { $ne: new mongoose.Types.ObjectId(excludeId) }; } catch(e) {}
     }
 
-    // Apply strict filters if requested by recipient search
+    // Apply blood group filter
     if (bloodGroup) query.bloodGroup = bloodGroup;
-    if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
-    if (district) {
-      const cleanDist = district.trim().replace(/^(YSR|Y\.S\.R\.)\s*/i, '');
-      query.district = new RegExp(cleanDist, 'i');
+
+    // Flexible location matching across district, city, and area
+    if (district || city) {
+      const targetTerm = (district || city || '').trim().replace(/^(YSR|Y\.S\.R\.)\s*/i, '');
+      const termRegex = new RegExp(targetTerm, 'i');
+      query.$or = [
+        { district: termRegex },
+        { city: termRegex },
+        { area: termRegex }
+      ];
     }
-    if (city) query.city = new RegExp(`^${city.trim()}$`, 'i');
-    if (pincode) query.pincode = pincode;
+
+    if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
 
     if (verified === 'true') {
       query.isVerifiedDonor = true;
