@@ -260,7 +260,7 @@ const HospitalDashboard = () => {
         const params = {
           bloodGroup: selectedRequest.bloodGroup,
           state: selectedRequest.state,
-          district: selectedRequest.district,
+          district: selectedRequest.district || selectedRequest.city,
           excludeId: user?._id
         };
         const res = await axios.get(`${API_URL}/api/requests/search/donors`, { params });
@@ -289,7 +289,7 @@ const HospitalDashboard = () => {
         const params = {
           bloodGroup: matchesModalRequest.bloodGroup,
           state: matchesModalRequest.state,
-          district: matchesModalRequest.district,
+          district: matchesModalRequest.district || matchesModalRequest.city,
           excludeId: user?._id
         };
         const res = await axios.get(`${API_URL}/api/requests/search/donors`, { params });
