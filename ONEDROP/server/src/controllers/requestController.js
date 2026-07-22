@@ -343,7 +343,11 @@ exports.getRequests = async (req, res) => {
     if (city) filter.city = new RegExp(`^${city.trim()}$`, 'i');
     if (bloodGroup) filter.bloodGroup = bloodGroup;
     if (emergencyMode !== undefined) filter.emergencyMode = emergencyMode === 'true';
-    if (status) filter.status = status;
+    if (status) {
+      if (status !== 'all') filter.status = status;
+    } else {
+      filter.status = { $in: ['Pending', 'Approved'] };
+    }
 
     const requests = await BloodRequest.find(filter)
       .populate('requester', 'fullName phone email profileImage')
@@ -622,13 +626,6 @@ exports.updatePledgeStatus = async (req, res) => {
       }
     }
 
-    // Auto-fulfill request if enough units met
-    if (request.unitsFulfilled >= request.unitsRequired) {
-      request.status = 'Fulfilled';
-    }
-
-    await request.save();
-
     await AuditLog.create({
       action: 'DONATION_VERIFY',
       performedBy: req.user.id,
@@ -636,6 +633,18 @@ exports.updatePledgeStatus = async (req, res) => {
       details: { requestId: id, pledgeId, donorId: pledge.donor, outcome: status }
     });
 
+    // Auto-fulfill and delete request ticket after donation verification & certificate issuance
+    if (status === 'Verified' || status === 'Donated' || request.unitsFulfilled >= request.unitsRequired) {
+      request.status = 'Fulfilled';
+      await BloodRequest.findByIdAndDelete(id);
+      console.log(`[Donation Complete] Request ${id} deleted after successful donation verification, certificate issuance & thank you dispatch.`);
+      return res.status(200).json({ 
+        message: 'Donation successfully marked as completed! Appreciation Certificate & Thank You message issued to donor, and request ticket deleted.',
+        request: { ...request.toObject(), status: 'Fulfilled' }
+      });
+    }
+
+    await request.save();
     res.status(200).json({ message: `Pledge status marked as ${status}.`, request });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update pledge status.', error: error.message });
