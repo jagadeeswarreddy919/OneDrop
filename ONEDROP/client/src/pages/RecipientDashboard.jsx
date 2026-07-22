@@ -296,8 +296,6 @@ const RecipientDashboard = () => {
           bloodGroup: matchesModalRequest.bloodGroup,
           state: matchesModalRequest.state,
           district: matchesModalRequest.district,
-          city: matchesModalRequest.city,
-          pincode: matchesModalRequest.pincode,
           excludeId: user?._id
         };
         const res = await axios.get(`${API_URL}/api/requests/search/donors`, { params });

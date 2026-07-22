@@ -176,48 +176,28 @@ exports.createRequest = async (req, res) => {
           }
         };
       } else if (!isAdmin) {
-        const locationFilters = [];
-        if (pincode) locationFilters.push({ pincode });
-        if (village) locationFilters.push({ village });
-        if (area) locationFilters.push({ area });
-        
-        // District-wide match (State + District)
-        const localAreaMatch = {};
-        if (state) localAreaMatch.state = state;
-        if (district) localAreaMatch.district = district;
-        
-        if (Object.keys(localAreaMatch).length > 0) {
-          locationFilters.push(localAreaMatch);
+        // District-wide match: query all matching donors in the requested District & State
+        if (district) {
+          donorQuery.district = new RegExp(`^${district.trim()}$`, 'i');
         }
-        
-        if (locationFilters.length > 0) {
-          donorQuery.$or = locationFilters;
+        if (state) {
+          donorQuery.state = new RegExp(`^${state.trim()}$`, 'i');
         }
       }
 
-      // Fetch matching donors
+      // Fetch matching donors across district
       const matchingDonors = await User.find(donorQuery);
 
-      // Fetch matching hospitals and blood banks in the same district/local area
+      // Fetch matching hospitals and blood banks in the same district
       const hospitalQuery = {
         role: 'Hospital'
       };
       if (!isAdmin) {
-        const hospLocationFilters = [];
-        if (pincode) hospLocationFilters.push({ pincode });
-        if (village) hospLocationFilters.push({ village });
-        if (area) hospLocationFilters.push({ area });
-        
-        const localHospMatch = {};
-        if (state) localHospMatch.state = state;
-        if (district) localHospMatch.district = district;
-        
-        if (Object.keys(localHospMatch).length > 0) {
-          hospLocationFilters.push(localHospMatch);
+        if (district) {
+          hospitalQuery.district = new RegExp(`^${district.trim()}$`, 'i');
         }
-        
-        if (hospLocationFilters.length > 0) {
-          hospitalQuery.$or = hospLocationFilters;
+        if (state) {
+          hospitalQuery.state = new RegExp(`^${state.trim()}$`, 'i');
         }
       }
       const matchingHospitals = await User.find(hospitalQuery);
