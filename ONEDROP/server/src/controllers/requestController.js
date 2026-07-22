@@ -338,9 +338,9 @@ exports.getRequests = async (req, res) => {
     const { state, district, city, bloodGroup, emergencyMode, status } = req.query;
     
     const filter = {};
-    if (state) filter.state = state;
-    if (district) filter.district = district;
-    if (city) filter.city = city;
+    if (state) filter.state = new RegExp(`^${state.trim()}$`, 'i');
+    if (district) filter.district = new RegExp(`^${district.trim()}$`, 'i');
+    if (city) filter.city = new RegExp(`^${city.trim()}$`, 'i');
     if (bloodGroup) filter.bloodGroup = bloodGroup;
     if (emergencyMode !== undefined) filter.emergencyMode = emergencyMode === 'true';
     if (status) filter.status = status;
@@ -659,9 +659,9 @@ exports.searchDonors = async (req, res) => {
 
     // Apply strict filters if requested by recipient search
     if (bloodGroup) query.bloodGroup = bloodGroup;
-    if (state) query.state = state;
-    if (district) query.district = district;
-    if (city) query.city = city;
+    if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
+    if (district) query.district = new RegExp(`^${district.trim()}$`, 'i');
+    if (city) query.city = new RegExp(`^${city.trim()}$`, 'i');
     if (pincode) query.pincode = pincode;
 
     if (verified === 'true') {
