@@ -313,6 +313,12 @@ const RegisterPage = () => {
         to_email: data.email,
         user_role: data.role,
         reward_points: response.data.user?.rewardPoints || 50
+      }).then(res => {
+        if (res.success) {
+          console.log('[Register] EmailJS Welcome Greeting Email successfully delivered to:', data.email);
+        } else {
+          console.warn('[Register] EmailJS Welcome Greeting Email notice:', res.error);
+        }
       }).catch(emailErr => console.warn('[Register] EmailJS welcome email send failed:', emailErr));
 
       setSuccessUser({

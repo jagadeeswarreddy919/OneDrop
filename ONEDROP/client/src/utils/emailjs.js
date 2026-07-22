@@ -5,6 +5,16 @@ export const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_
 export const EMAILJS_ALERT_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ALERT_TEMPLATE_ID || 'template_fbkwwbo';
 export const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '8UH1zz6oDW4iYsTn4';
 
+// Initialize EmailJS Browser SDK
+try {
+  if (EMAILJS_PUBLIC_KEY) {
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    console.log('[EmailJS] Initialized with Public Key:', EMAILJS_PUBLIC_KEY);
+  }
+} catch (initErr) {
+  console.warn('[EmailJS Init Warning]:', initErr);
+}
+
 /**
  * Send Welcome Greeting Email to newly registered user via EmailJS (template_r46hqhf)
  * @param {Object} params - { to_name, to_email, user_role, reward_points }
