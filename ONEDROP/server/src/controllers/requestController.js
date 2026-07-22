@@ -649,7 +649,7 @@ exports.searchDonors = async (req, res) => {
     // Apply blood group filter
     if (bloodGroup) query.bloodGroup = bloodGroup;
 
-    // Flexible location matching across district, city, and area
+    // Flexible location matching: prioritize district matching across district, city, and area
     if (district || city) {
       const targetTerm = (district || city || '').trim().replace(/^(YSR|Y\.S\.R\.)\s*/i, '');
       const termRegex = new RegExp(targetTerm, 'i');
@@ -658,9 +658,10 @@ exports.searchDonors = async (req, res) => {
         { city: termRegex },
         { area: termRegex }
       ];
+    } else if (state) {
+      const cleanState = state.trim().split(' ')[0];
+      query.state = new RegExp(cleanState, 'i');
     }
-
-    if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
 
     if (verified === 'true') {
       query.isVerifiedDonor = true;

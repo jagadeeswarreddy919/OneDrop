@@ -259,7 +259,6 @@ const HospitalDashboard = () => {
       try {
         const params = {
           bloodGroup: selectedRequest.bloodGroup,
-          state: selectedRequest.state,
           district: selectedRequest.district || selectedRequest.city,
           excludeId: user?._id
         };
@@ -288,7 +287,6 @@ const HospitalDashboard = () => {
       try {
         const params = {
           bloodGroup: matchesModalRequest.bloodGroup,
-          state: matchesModalRequest.state,
           district: matchesModalRequest.district || matchesModalRequest.city,
           excludeId: user?._id
         };
