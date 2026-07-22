@@ -292,6 +292,18 @@ const AppShell = () => {
     // Play our synthesized notification chime
     playNotificationSound();
 
+    // Trigger native browser desktop notification popup if permitted
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(entry.title || 'ONEDROP Notification', {
+          body: entry.message || '',
+          icon: '/manifest.json'
+        });
+      } catch (err) {
+        console.warn('[Browser Notification Error]:', err.message);
+      }
+    }
+
     setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== entry.id));
     }, 8000);
@@ -448,11 +460,15 @@ const AppShell = () => {
               title = n.bloodRequest?.emergencyMode ? '🚨 Emergency Blood Request' : '🩸 Blood Request';
             } else if (n.type === 'greeting') {
               const msg = n.message || '';
-              if (!msg.startsWith('📢') && !msg.startsWith('🎉')) {
-                return; // Ignore welcome/onboarding greeting wishes
+              const isTimeGreeting = msg.includes('Good Morning') || msg.includes('Good Afternoon') || msg.includes('Good Evening') || msg.includes('🌅') || msg.includes('☀️') || msg.includes('🌙');
+              if (!msg.startsWith('📢') && !msg.startsWith('🎉') && !isTimeGreeting) {
+                return; // Ignore static welcome/onboarding greeting wishes
               }
               type = 'success';
-              title = '👋 Welcome';
+              if (msg.includes('Good Morning') || msg.includes('🌅')) title = '🌅 Good Morning';
+              else if (msg.includes('Good Afternoon') || msg.includes('☀️')) title = '☀️ Good Afternoon';
+              else if (msg.includes('Good Evening') || msg.includes('🌙')) title = '🌙 Good Evening';
+              else title = '👋 Greeting';
             }
 
             triggerNotification({

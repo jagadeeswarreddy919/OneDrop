@@ -53,11 +53,15 @@ exports.createOrGetChat = async (req, res) => {
   }
 };
 
-// Retrieve message logs for a particular chat
+// Retrieve message logs for a particular chat (within 30-day active retention window)
 exports.getMessages = async (req, res) => {
   try {
     const { chatId } = req.params;
-    const messages = await Message.find({ chat: chatId })
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const messages = await Message.find({
+      chat: chatId,
+      createdAt: { $gte: thirtyDaysAgo }
+    })
       .populate('sender', 'fullName profileImage role')
       .sort({ createdAt: 1 });
 

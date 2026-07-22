@@ -826,43 +826,53 @@ const DonorDashboard = () => {
       alert(data.message || `🎉 Good news! Your blood request has been accepted by a volunteer.`);
       fetchMyRequests(); // Reload tickets
     });
+
+    socket.on('new_notification', (data) => {
+      console.log('[WebSocket] New Notification Received:', data);
+      fetchNotifications();
+    });
     
     return () => {
       socket.off('new_blood_request');
       socket.off('chat_notification');
       socket.off('donation_verified');
       socket.off('request_accepted');
+      socket.off('new_notification');
     };
   }, [user, token]);
 
   const [logs, setLogs] = useState([]);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!token) return;
-      try {
-        const res = await axios.get(`${API_URL}/api/notifications`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const filtered = (res.data || []).filter(n => {
-          if (n.type === 'greeting') {
-            const msg = n.message || '';
-            if (!msg.startsWith('📢') && !msg.startsWith('🎉')) {
-              return false; // Ignore welcome/onboarding greeting wishes
-            }
+  const fetchNotifications = async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${API_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const filtered = (res.data || []).filter(n => {
+        if (n.type === 'greeting') {
+          const msg = n.message || '';
+          const isTimeGreeting = msg.includes('Good Morning') || msg.includes('Good Afternoon') || msg.includes('Good Evening') || msg.includes('🌅') || msg.includes('☀️') || msg.includes('🌙');
+          if (!msg.startsWith('📢') && !msg.startsWith('🎉') && !isTimeGreeting) {
+            return false; // Ignore static welcome/onboarding greeting wishes
           }
-          return true;
-        });
-        const mapped = filtered.map((n) => {
-          let type = 'emergency';
-          let title = '🩸 Blood Alert';
-          if (n.type === 'chat_message') {
-            type = 'chat';
-            title = '💬 Chat';
-          } else if (n.type === 'greeting') {
-            type = 'greeting';
-            title = '👋 Welcome';
-          } else if (n.type === 'camp_announcement') {
+        }
+        return true;
+      });
+      const mapped = filtered.map((n) => {
+        let type = 'emergency';
+        let title = '🩸 Blood Alert';
+        if (n.type === 'chat_message') {
+          type = 'chat';
+          title = '💬 Chat';
+        } else if (n.type === 'greeting') {
+          type = 'greeting';
+          const msg = n.message || '';
+          if (msg.includes('Good Morning') || msg.includes('🌅')) title = '🌅 Good Morning';
+          else if (msg.includes('Good Afternoon') || msg.includes('☀️')) title = '☀️ Good Afternoon';
+          else if (msg.includes('Good Evening') || msg.includes('🌙')) title = '🌙 Good Evening';
+          else title = '👋 Greeting';
+        } else if (n.type === 'camp_announcement') {
             type = 'camp';
             title = '⛺ Blood Camp';
           } else if (n.type === 'eligibility_reminder') {

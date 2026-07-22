@@ -54,3 +54,25 @@ exports.deleteNotification = async (req, res) => {
     res.status(500).json({ message: 'Error deleting notification.', error: error.message });
   }
 };
+
+const { sendBloodRequestCheckNotification, sendGreetingNotification } = require('../services/notificationScheduler');
+
+exports.triggerReminders = async (req, res) => {
+  try {
+    const result = await sendBloodRequestCheckNotification();
+    res.status(200).json({ message: 'Periodic 5-hour blood request check notification triggered successfully.', result });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to trigger blood request reminders.', error: error.message });
+  }
+};
+
+exports.triggerGreetings = async (req, res) => {
+  try {
+    const { slot } = req.body || {}; // 'morning' | 'afternoon' | 'evening'
+    const result = await sendGreetingNotification(slot || 'morning');
+    res.status(200).json({ message: `Greeting notification (${slot || 'morning'}) triggered successfully.`, result });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to trigger greeting notifications.', error: error.message });
+  }
+};
+

@@ -403,7 +403,12 @@ const ChatWorkspace = () => {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div>
-                  <p className="font-bold text-sm">{getRecipientUser(activeChat)?.fullName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-sm">{getRecipientUser(activeChat)?.fullName}</p>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-semibold border border-emerald-500/20">
+                      💬 Active 30 Days
+                    </span>
+                  </div>
                   <p className="text-[10px] text-emerald-500 font-semibold">{otherUserTyping ? 'typing...' : 'active now'}</p>
                 </div>
               </div>
