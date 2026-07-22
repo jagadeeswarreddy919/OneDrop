@@ -18,6 +18,7 @@ import { API_URL } from '../utils/api';
 import { STATES_DATA } from '../utils/statesData';
 import AppreciationCertificate from '../components/AppreciationCertificate';
 import SmartSearchInput from '../components/SmartSearchInput';
+import { sendBloodRequestAlertEmail } from '../utils/emailjs';
 
 // Case-insensitive normalization helpers for locations to match STATES_DATA keys
 const normalizeState = (stateName) => {
@@ -308,7 +309,7 @@ const HospitalDashboard = () => {
     getModalMatchingDonors();
   }, [matchesModalRequest, user]);
 
-  const handleAlertDonor = async (requestId, donorId, donorName) => {
+  const handleAlertDonor = async (requestId, donorId, donorName, donorObj = null) => {
     if (handleActionBlock('send match notification')) return;
     try {
       await axios.post(
@@ -316,10 +317,54 @@ const HospitalDashboard = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      // Trigger EmailJS Blood Request Alert Email (template_fbkwwbo)
+      const targetEmail = donorObj?.email || '';
+      if (targetEmail) {
+        sendBloodRequestAlertEmail({
+          to_name: donorName,
+          to_email: targetEmail,
+          blood_group: matchesModalRequest?.bloodGroup || 'Urgent',
+          patient_name: matchesModalRequest?.patientName || 'Patient',
+          hospital_name: matchesModalRequest?.hospitalName || user?.fullName || 'Hospital',
+          units_required: matchesModalRequest?.unitsRequired || 1,
+          city: matchesModalRequest?.city || '',
+          contact_phone: matchesModalRequest?.contactPhone || user?.phone || ''
+        }).catch(err => console.warn('[EmailJS Alert Error]:', err));
+      }
+
       alert(`Alert notification successfully sent to donor ${donorName}!`);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to send alert notification.');
     }
+  };
+
+  const handleAlertAllFilteredDonors = async () => {
+    if (!modalMatchingDonors || modalMatchingDonors.length === 0) return;
+    const confirmAlert = window.confirm(`Send EmailJS Blood Request Alert (${modalMatchingDonors.length} matching donors) via template_fbkwwbo?`);
+    if (!confirmAlert) return;
+
+    let successCount = 0;
+    for (const donor of modalMatchingDonors) {
+      if (donor.email) {
+        try {
+          await sendBloodRequestAlertEmail({
+            to_name: donor.fullName,
+            to_email: donor.email,
+            blood_group: matchesModalRequest?.bloodGroup || 'Urgent',
+            patient_name: matchesModalRequest?.patientName || 'Patient',
+            hospital_name: matchesModalRequest?.hospitalName || user?.fullName || 'Hospital',
+            units_required: matchesModalRequest?.unitsRequired || 1,
+            city: matchesModalRequest?.city || '',
+            contact_phone: matchesModalRequest?.contactPhone || user?.phone || ''
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to send EmailJS alert to ${donor.email}:`, err);
+        }
+      }
+    }
+    alert(`EmailJS Blood Request Alert (template_fbkwwbo) successfully dispatched to ${successCount} matched donor(s)!`);
   };
 
   const fetchEligibleDonors = async () => {
