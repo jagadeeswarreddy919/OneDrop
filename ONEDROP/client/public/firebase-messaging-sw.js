@@ -9,13 +9,16 @@ if (config.apiKey && config.projectId) {
   const messaging = firebase.messaging();
 
   messaging.onBackgroundMessage((payload) => {
-    const title = payload.notification?.title || 'ONEDROP Alert';
+    const title = payload.notification?.title || payload.data?.title || '🚨 ONEDROP Alert';
     const options = {
-      body: payload.notification?.body || '',
-      icon: '/logo.png',
-      badge: '/logo.png',
+      body: payload.notification?.body || payload.data?.body || payload.data?.message || 'Blood match or chat alert received.',
+      icon: '/be_a_hero.png',
+      badge: '/be_a_hero.png',
+      vibrate: [300, 100, 300, 100, 300],
+      requireInteraction: true,
+      renotify: true,
       data: payload.data || {},
-      tag: payload.data?.type || 'onedrop-alert'
+      tag: payload.data?.type || 'onedrop-push-' + Date.now()
     };
     self.registration.showNotification(title, options);
   });

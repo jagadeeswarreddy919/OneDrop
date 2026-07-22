@@ -844,8 +844,9 @@ const DonorDashboard = () => {
 
   const [logs, setLogs] = useState([]);
 
-  const fetchNotifications = async () => {
-    if (!token) return;
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!token) return;
     try {
       const res = await axios.get(`${API_URL}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` }

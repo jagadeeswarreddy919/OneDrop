@@ -292,15 +292,30 @@ const AppShell = () => {
     // Play our synthesized notification chime
     playNotificationSound();
 
-    // Trigger native browser desktop notification popup if permitted
+    // Route notification directly into Mobile Phone Top Status / Notification Bar
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(entry.title || 'ONEDROP Notification', {
-          body: entry.message || '',
-          icon: '/manifest.json'
+      const notifTitle = entry.title || 'ONEDROP Alert';
+      const notifOptions = {
+        body: entry.message || '',
+        icon: '/be_a_hero.png',
+        badge: '/be_a_hero.png',
+        vibrate: [300, 100, 300, 100, 300],
+        requireInteraction: true,
+        renotify: true,
+        tag: `onedrop-bar-${Date.now()}`,
+        data: {
+          url: entry.chatPartnerId ? `/chat?partnerId=${entry.chatPartnerId}` : (entry.requesterId ? '/donor' : '/')
+        }
+      };
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification(notifTitle, notifOptions);
+        }).catch(() => {
+          try { new Notification(notifTitle, notifOptions); } catch (e) {}
         });
-      } catch (err) {
-        console.warn('[Browser Notification Error]:', err.message);
+      } else {
+        try { new Notification(notifTitle, notifOptions); } catch (e) {}
       }
     }
 
