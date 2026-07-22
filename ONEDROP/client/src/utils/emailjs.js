@@ -1,11 +1,12 @@
 import emailjs from '@emailjs/browser';
 
 export const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_u0cgesu';
-export const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_fbkwwbo';
+export const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE_ID || 'template_r46hqhf';
+export const EMAILJS_ALERT_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ALERT_TEMPLATE_ID || 'template_fbkwwbo';
 export const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '8UH1zz6oDW4iYsTn4';
 
 /**
- * Send Welcome Greeting Email to newly registered user via EmailJS
+ * Send Welcome Greeting Email to newly registered user via EmailJS (template_r46hqhf)
  * @param {Object} params - { to_name, to_email, user_role, reward_points }
  */
 export const sendWelcomeEmail = async (params) => {
@@ -17,26 +18,43 @@ export const sendWelcomeEmail = async (params) => {
   try {
     const templateParams = {
       to_name: params.to_name || 'Lifesaver',
+      name: params.to_name || 'Lifesaver',
       to_email: params.to_email,
       user_email: params.to_email,
+      email: params.to_email,
       user_role: params.user_role || 'Donor',
+      role: params.user_role || 'Donor',
       reward_points: params.reward_points || 50,
+      points: params.reward_points || 50,
       message: `Welcome to ONEDROP, ${params.to_name || 'Lifesaver'}! Thank you for joining as a ${params.user_role || 'Donor'}. Your welcome reward of 50 points has been credited to your account. Together, we bridge lives through blood coordinates.`,
       subject: 'Welcome to ONEDROP! 🩸'
     };
 
-    console.log('[EmailJS] Sending welcome greeting email to:', params.to_email, 'Service:', EMAILJS_SERVICE_ID, 'Template:', EMAILJS_TEMPLATE_ID);
+    console.log('[EmailJS] Sending welcome greeting email to:', params.to_email, 'Service:', EMAILJS_SERVICE_ID, 'Welcome Template:', EMAILJS_WELCOME_TEMPLATE_ID);
 
-    // 1. Send via EmailJS Browser SDK if public key is available
+    // 1. Try sending via EmailJS Browser SDK using Welcome Template (template_r46hqhf)
     if (EMAILJS_PUBLIC_KEY) {
-      const response = await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
-      );
-      console.log('[EmailJS SDK] Welcome email delivered successfully:', response.status, response.text);
-      return { success: true, response };
+      try {
+        const response = await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_WELCOME_TEMPLATE_ID,
+          templateParams,
+          EMAILJS_PUBLIC_KEY
+        );
+        console.log('[EmailJS SDK] Welcome email delivered successfully via template_r46hqhf:', response.status, response.text);
+        return { success: true, response };
+      } catch (welcomeErr) {
+        console.warn('[EmailJS SDK Notice] Primary welcome template (template_r46hqhf) notice, attempting secondary alert template fallback:', welcomeErr?.text || welcomeErr?.message || welcomeErr);
+        // Fallback to EMAILJS_ALERT_TEMPLATE_ID
+        const response = await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_ALERT_TEMPLATE_ID,
+          templateParams,
+          EMAILJS_PUBLIC_KEY
+        );
+        console.log('[EmailJS SDK Fallback] Welcome email delivered via alert template:', response.status, response.text);
+        return { success: true, response };
+      }
     }
 
     // 2. Direct HTTP API Fallback
@@ -45,7 +63,7 @@ export const sendWelcomeEmail = async (params) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         service_id: EMAILJS_SERVICE_ID,
-        template_id: EMAILJS_TEMPLATE_ID,
+        template_id: EMAILJS_WELCOME_TEMPLATE_ID,
         user_id: EMAILJS_PUBLIC_KEY || undefined,
         template_params: templateParams
       })
@@ -90,13 +108,13 @@ export const sendBloodRequestAlertEmail = async (params) => {
       subject: `🚨 Urgent ${params.blood_group || 'Blood'} Request Alert - ONEDROP`
     };
 
-    console.log('[EmailJS] Dispatching Blood Request Alert email to:', params.to_email, 'Service:', EMAILJS_SERVICE_ID, 'Template:', EMAILJS_TEMPLATE_ID);
+    console.log('[EmailJS] Dispatching Blood Request Alert email to:', params.to_email, 'Service:', EMAILJS_SERVICE_ID, 'Alert Template:', EMAILJS_ALERT_TEMPLATE_ID);
 
     // 1. Try sending via EmailJS SDK if public key is configured
     if (EMAILJS_PUBLIC_KEY) {
       const response = await emailjs.send(
         EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
+        EMAILJS_ALERT_TEMPLATE_ID,
         templateParams,
         EMAILJS_PUBLIC_KEY
       );
@@ -110,7 +128,7 @@ export const sendBloodRequestAlertEmail = async (params) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         service_id: EMAILJS_SERVICE_ID,
-        template_id: EMAILJS_TEMPLATE_ID,
+        template_id: EMAILJS_ALERT_TEMPLATE_ID,
         user_id: EMAILJS_PUBLIC_KEY || undefined,
         template_params: templateParams
       })
