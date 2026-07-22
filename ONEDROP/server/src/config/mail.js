@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 
 const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
 const smtpPort = parseInt(process.env.SMTP_PORT || '465');
-const smtpUser = process.env.SMTP_USER || 'onedropu@gmail.com';
+const smtpUser = process.env.SMTP_USER || 'onedroplifesaver@gmail.com';
 const smtpPass = process.env.SMTP_PASS;
 
 // Initialize transporter

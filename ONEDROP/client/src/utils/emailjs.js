@@ -36,6 +36,8 @@ export const sendWelcomeEmail = async (params) => {
       role: params.user_role || 'Donor',
       reward_points: params.reward_points || 50,
       points: params.reward_points || 50,
+      from_name: 'ONEDROP Lifesaver Network',
+      from_email: 'onedroplifesaver@gmail.com',
       message: `Welcome to ONEDROP, ${params.to_name || 'Lifesaver'}! Thank you for joining as a ${params.user_role || 'Donor'}. Your welcome reward of 50 points has been credited to your account. Together, we bridge lives through blood coordinates.`,
       subject: 'Welcome to ONEDROP! 🩸'
     };
@@ -114,6 +116,8 @@ export const sendBloodRequestAlertEmail = async (params) => {
       units_required: params.units_required || 1,
       city: params.city || '',
       contact_phone: params.contact_phone || '',
+      from_name: 'ONEDROP Lifesaver Network',
+      from_email: 'onedroplifesaver@gmail.com',
       message: `🚨 URGENT BLOOD REQUEST ALERT! Patient ${params.patient_name || 'in need'} urgently requires ${params.units_required || 1} unit(s) of ${params.blood_group || ''} blood at ${params.hospital_name || 'a nearby hospital'}${params.city ? ' in ' + params.city : ''}. Contact: ${params.contact_phone || 'ONEDROP App'}. Please open your ONEDROP app to respond!`,
       subject: `🚨 Urgent ${params.blood_group || 'Blood'} Request Alert - ONEDROP`
     };
