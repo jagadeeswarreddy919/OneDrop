@@ -568,7 +568,7 @@ const AppShell = () => {
         
         {/* Simple global footer */}
         <footer className="bg-white dark:bg-dark-900 border-t border-slate-200 dark:border-slate-800 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-          <p>© {new Date().getFullYear()} ONEDROP - Connecting Lives Through Blood Donation. Powered by Free & Open Source Tech.</p>
+          <p>© {new Date().getFullYear()} ONEDROP - Connecting Lives Through Blood Donation.</p>
         </footer>
       </div>
   );
