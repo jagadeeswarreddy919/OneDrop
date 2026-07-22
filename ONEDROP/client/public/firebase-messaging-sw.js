@@ -24,6 +24,34 @@ if (config.apiKey && config.projectId) {
   });
 }
 
+// Universal Web Push handler for Mobile Phone Top Notification Bar
+self.addEventListener('push', (event) => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: '🚨 ONEDROP Alert', body: event.data.text() };
+    }
+  }
+
+  const title = data.title || data.notification?.title || '🚨 ONEDROP Alert';
+  const options = {
+    body: data.body || data.message || data.notification?.body || 'New blood request or chat alert received.',
+    icon: '/be_a_hero.png',
+    badge: '/be_a_hero.png',
+    vibrate: [300, 100, 300, 100, 300],
+    requireInteraction: true,
+    renotify: true,
+    tag: data.tag || 'onedrop-push-' + Date.now(),
+    data: data
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};

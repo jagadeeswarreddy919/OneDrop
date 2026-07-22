@@ -512,11 +512,17 @@ const AppShell = () => {
 
   useEffect(() => {
     if (isAuthenticated && token && !pushEnabled) {
-      requestFcmToken().then((fcm) => {
-        if (fcm) saveFcmTokenToServer(fcm, token);
-      }).catch((err) => {
-        console.warn('[App FCM Auto-Enable] Error:', err.message);
-      });
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            requestFcmToken().then((fcm) => {
+              if (fcm) saveFcmTokenToServer(fcm, token);
+            }).catch((err) => {
+              console.warn('[App FCM Auto-Enable] Error:', err.message);
+            });
+          }
+        });
+      }
     }
   }, [isAuthenticated, token, pushEnabled]);
 
