@@ -649,7 +649,10 @@ exports.searchDonors = async (req, res) => {
     // Apply strict filters if requested by recipient search
     if (bloodGroup) query.bloodGroup = bloodGroup;
     if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
-    if (district) query.district = new RegExp(`^${district.trim()}$`, 'i');
+    if (district) {
+      const cleanDist = district.trim().replace(/^(YSR|Y\.S\.R\.)\s*/i, '');
+      query.district = new RegExp(cleanDist, 'i');
+    }
     if (city) query.city = new RegExp(`^${city.trim()}$`, 'i');
     if (pincode) query.pincode = pincode;
 

@@ -1118,8 +1118,6 @@ const DonorDashboard = () => {
           bloodGroup: selectedRequest.bloodGroup,
           state: selectedRequest.state,
           district: selectedRequest.district,
-          city: selectedRequest.city,
-          pincode: selectedRequest.pincode,
           excludeId: user?._id
         };
         const res = await axios.get(`${API_URL}/api/requests/search/donors`, { params });
