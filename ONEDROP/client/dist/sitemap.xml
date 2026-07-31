@@ -3,55 +3,7 @@
   <url>
     <loc>https://onedrop-india.vercel.app/</loc>
     <lastmod>2026-07-31</lastmod>
-    <changefreq>daily</changefreq>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/login</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/register</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/campaigns</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/blogs</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/donor</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/recipient</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/hospital</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://onedrop-india.vercel.app/chat</loc>
-    <lastmod>2026-07-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
   </url>
 </urlset>
