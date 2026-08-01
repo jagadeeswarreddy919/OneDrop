@@ -45,6 +45,25 @@
 
 ---
 
+## 📡 API Endpoints Architecture
+
+| Category | Endpoint | Method | Auth Required | Description |
+| :--- | :--- | :---: | :---: | :--- |
+| **Auth** | `/api/auth/register` | `POST` | No | User registration across Donor, Recipient, and Hospital roles |
+| **Auth** | `/api/auth/login` | `POST` | No | JWT authentication & credential verification |
+| **Auth** | `/api/auth/contact-feedback` | `POST` | No | EmailJS contact form and feedback submission gateway |
+| **Requests** | `/api/requests` | `POST` | Yes | Create emergency or standard blood request ticket |
+| **Requests** | `/api/requests` | `GET` | No | Query active blood requests filtered by location & blood group |
+| **Requests** | `/api/requests/:id/pledge` | `POST` | Yes | Donor pledge action (transitions status to `Accepted`) |
+| **Requests** | `/api/requests/:id/pledge/:pledgeId` | `PUT` | Yes | Requester verification (transitions status to `Fulfilled` + Certificate) |
+| **Notifications** | `/api/notifications` | `GET` | Yes | Fetch user notification feed (`.lean()` query execution) |
+| **Notifications** | `/api/notifications/read-all` | `PUT` | Yes | Bulk mark notifications as read |
+| **Chat** | `/api/chat/messages` | `POST` | Yes | Send peer-to-peer chat message and trigger push alerts |
+| **Admin** | `/api/admin/metrics` | `GET` | Yes (Admin) | Retrieve platform telemetry summary |
+| **Admin** | `/api/admin/broadcast` | `POST` | Yes (Admin) | Dispatch multi-channel broadcast to targeted users |
+
+---
+
 ## 📁 Repository Structure
 
 ```
