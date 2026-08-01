@@ -170,8 +170,7 @@ const Navbar = ({
                 <button
                   onClick={() => setNotifBarOpen(!notifBarOpen)}
                   className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                  aria-label="Open Notifications Bar"
-                  title="Notification Bar"
+                  aria-label="Notifications"
                 >
                   <Bell className="w-5 h-5 text-slate-700 dark:text-slate-200" />
                   {unreadCount > 0 && (
@@ -233,8 +232,7 @@ const Navbar = ({
                 <button
                   onClick={() => setNotifBarOpen(!notifBarOpen)}
                   className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                  aria-label="Open Notifications Bar"
-                  title="Notification Bar"
+                  aria-label="Notifications"
                 >
                   <Bell className="w-5 h-5 text-slate-700 dark:text-slate-200" />
                   {unreadCount > 0 && (

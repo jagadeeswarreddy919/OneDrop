@@ -125,7 +125,7 @@ const NotificationBar = ({
               </span>
             )}
           </div>
-          <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100 font-sans">Notification Bar</h3>
+          <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100 font-sans">Notifications</h3>
         </div>
 
         <div className="flex items-center gap-2">
