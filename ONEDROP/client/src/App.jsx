@@ -519,12 +519,16 @@ const AppShell = () => {
     };
   }, [isAuthenticated, user?._id, user?.role, token, triggerNotification]);
 
-  // Keep track of notification IDs we have already toasted to avoid duplicates
+  // Keep track of notification IDs we have already processed to avoid duplicate toasts
   const shownNotificationIds = React.useRef(new Set());
+  const initialLoadCompleted = React.useRef(false);
+  const hasToastedGreeting = React.useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
       shownNotificationIds.current.clear();
+      initialLoadCompleted.current = false;
+      hasToastedGreeting.current = false;
       setNotifications([]);
       setAllNotifications([]);
       return;
@@ -539,44 +543,61 @@ const AppShell = () => {
         const notificationData = res.data || [];
         setAllNotifications(notificationData);
         
-        const unreadNotifications = notificationData.filter(n => !n.read);
+        // 1. On very first load / refresh: Populate shownNotificationIds silently
+        // so that existing/past DB notifications update the NotificationBar dropdown list
+        // WITHOUT triggering floating toast popups or sound on page refresh!
+        if (!initialLoadCompleted.current) {
+          notificationData.forEach((n) => {
+            const notifId = n._id || n.id;
+            if (notifId) shownNotificationIds.current.add(notifId);
+          });
+          initialLoadCompleted.current = true;
+          return;
+        }
         
-        unreadNotifications.forEach(n => {
-          if (!shownNotificationIds.current.has(n._id)) {
-            shownNotificationIds.current.add(n._id);
-            
-            let type = 'success';
-            let title = 'Notification';
-            
-            if (n.type === 'chat_message' || n.type === 'chat') {
-              type = 'chat';
-              title = 'New Message';
-            } else if (n.type === 'emergency' || n.bloodRequest?.emergencyMode) {
-              type = 'warning';
-              title = n.bloodRequest?.emergencyMode ? '🚨 Emergency Blood Request' : '🩸 Blood Request';
-            } else if (n.type === 'greeting') {
-              const msg = n.message || '';
-              const isTimeGreeting = msg.includes('Good Morning') || msg.includes('Good Afternoon') || msg.includes('Good Evening') || msg.includes('🌅') || msg.includes('☀️') || msg.includes('🌙');
-              if (!msg.startsWith('📢') && !msg.startsWith('🎉') && !isTimeGreeting) {
-                return;
-              }
-              type = 'success';
-              if (msg.includes('Good Morning') || msg.includes('🌅')) title = '🌅 Good Morning';
-              else if (msg.includes('Good Afternoon') || msg.includes('☀️')) title = '☀️ Good Afternoon';
-              else if (msg.includes('Good Evening') || msg.includes('🌙')) title = '🌙 Good Evening';
-              else title = '👋 Greeting';
-            }
+        // 2. On subsequent background polls: Only trigger toast for brand-new notifications
+        const unreadNotifications = notificationData.filter((n) => !n.read);
+        
+        unreadNotifications.forEach((n) => {
+          const notifId = n._id || n.id;
+          if (!notifId || shownNotificationIds.current.has(notifId)) return;
 
-            triggerNotification({
-              id: n._id,
-              title: title,
-              message: n.message,
-              type: type,
-              chatPartnerId: n.donor?._id || n.donor,
-              chatId: n.chat,
-              requesterId: n.bloodRequest?.requester
-            });
+          shownNotificationIds.current.add(notifId);
+
+          let type = 'success';
+          let title = 'Notification';
+
+          if (n.type === 'chat_message' || n.type === 'chat') {
+            type = 'chat';
+            title = 'New Message';
+          } else if (n.type === 'emergency' || n.bloodRequest?.emergencyMode) {
+            type = 'warning';
+            title = n.bloodRequest?.emergencyMode ? '🚨 Emergency Blood Request' : '🩸 Blood Request';
+          } else if (n.type === 'greeting') {
+            if (hasToastedGreeting.current) return; // Only 1 greeting toast per session
+            hasToastedGreeting.current = true;
+
+            const msg = n.message || '';
+            const isTimeGreeting = msg.includes('Good Morning') || msg.includes('Good Afternoon') || msg.includes('Good Evening') || msg.includes('🌅') || msg.includes('☀️') || msg.includes('🌙');
+            if (!msg.startsWith('📢') && !msg.startsWith('🎉') && !isTimeGreeting) {
+              return;
+            }
+            type = 'success';
+            if (msg.includes('Good Morning') || msg.includes('🌅')) title = '🌅 Good Morning';
+            else if (msg.includes('Good Afternoon') || msg.includes('☀️')) title = '☀️ Good Afternoon';
+            else if (msg.includes('Good Evening') || msg.includes('🌙')) title = '🌙 Good Evening';
+            else title = '👋 Greeting';
           }
+
+          triggerNotification({
+            id: notifId,
+            title: title,
+            message: n.message,
+            type: type,
+            chatPartnerId: n.donor?._id || n.donor,
+            chatId: n.chat,
+            requesterId: n.bloodRequest?.requester
+          });
         });
       } catch (err) {
         console.error('Failed to poll background notifications:', err.message);
@@ -584,7 +605,7 @@ const AppShell = () => {
     };
 
     pollNotifications();
-    const interval = setInterval(pollNotifications, 1000);
+    const interval = setInterval(pollNotifications, 5000);
 
     return () => clearInterval(interval);
   }, [isAuthenticated, token, triggerNotification]);
