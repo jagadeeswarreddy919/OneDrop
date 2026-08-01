@@ -41,7 +41,8 @@ const NotificationBar = ({
   isOpen,
   onClose,
   pushEnabled,
-  onEnablePush
+  onEnablePush,
+  inline = false
 }) => {
   const [filter, setFilter] = useState('all'); // 'all' | 'unread' | 'urgent'
   const dropdownRef = useRef(null);
@@ -49,6 +50,7 @@ const NotificationBar = ({
 
   // Close dropdown on click outside
   useEffect(() => {
+    if (inline) return;
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         onClose?.();
@@ -60,9 +62,9 @@ const NotificationBar = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, inline]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !inline) return null;
 
   const filteredNotifications = notifications.filter((notif) => {
     if (filter === 'unread') return !notif.read;
@@ -96,7 +98,7 @@ const NotificationBar = ({
 
   const handleAction = (notif) => {
     onMarkRead?.(notif._id || notif.id);
-    onClose?.();
+    if (!inline) onClose?.();
 
     if (notif.chatPartnerId || notif.donor?._id || notif.donor) {
       const partnerId = notif.chatPartnerId || notif.donor?._id || notif.donor;
@@ -112,7 +114,11 @@ const NotificationBar = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[70] overflow-hidden transition-all animate-in fade-in slide-in-from-top-2 duration-200"
+      className={
+        inline
+          ? "w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden"
+          : "absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[70] overflow-hidden transition-all animate-in fade-in slide-in-from-top-2 duration-200"
+      }
     >
       {/* Header Bar */}
       <div className="p-4 bg-slate-50/80 dark:bg-dark-850/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">

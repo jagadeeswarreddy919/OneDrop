@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldAlert, Activity, ClipboardList, Database, Save, CalendarRange, 
   Plus, Heart, MessageSquare, Phone, MapPin, X, RefreshCw, Loader2,
-  Printer, Search, Award, Users, Sparkles, AlertCircle, Menu, Home
+  Printer, Search, Award, Users, Sparkles, AlertCircle, Menu, Home, Bell
 } from 'lucide-react';
 import { updateProfileSuccess, logout } from '../redux/authSlice';
 import { 
@@ -19,6 +19,7 @@ import { STATES_DATA } from '../utils/statesData';
 import AppreciationCertificate from '../components/AppreciationCertificate';
 import SmartSearchInput from '../components/SmartSearchInput';
 import { sendBloodRequestAlertEmail } from '../utils/emailjs';
+import NotificationBar from '../components/NotificationBar';
 
 // Case-insensitive normalization helpers for locations to match STATES_DATA keys
 const normalizeState = (stateName) => {
@@ -2276,7 +2277,8 @@ const HospitalDashboard = () => {
                   {[
                     { id: 'operations', label: 'Operations', icon: Activity },
                     { id: 'donorRegistry', label: 'Smart Match Finder', icon: Users },
-                    { id: 'browseRequests', label: 'Browse Regional Requests', icon: Heart }
+                    { id: 'browseRequests', label: 'Browse Regional Requests', icon: Heart },
+                    { id: 'notifications', label: 'Notifications', icon: Bell }
                   ].map((item) => {
                     const IconComp = item.icon;
                     const isActive = activeTab === item.id;

@@ -21,6 +21,7 @@ import { BLOOD_BANKS_DATA } from '../utils/bloodBanksData';
 import AppreciationCertificate from '../components/AppreciationCertificate';
 import SmartSearchInput from '../components/SmartSearchInput';
 import { sendBloodRequestAlertEmail } from '../utils/emailjs';
+import NotificationBar from '../components/NotificationBar';
 
 // Case-insensitive normalization helpers for locations to match STATES_DATA keys
 const normalizeState = (stateName) => {
@@ -2517,6 +2518,7 @@ const RecipientDashboard = () => {
                   {[
                     { id: 'requests', label: 'Requests & Pledges', icon: FileText },
                     { id: 'smartMatch', label: 'Smart Match Finder', icon: Sparkles },
+                    { id: 'notifications', label: 'Notifications', icon: Bell },
                     { id: 'bloodbanks', label: 'Blood Banks', icon: Compass }
                   ].map((item) => {
                     const IconComp = item.icon;

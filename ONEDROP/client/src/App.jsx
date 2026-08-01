@@ -165,35 +165,6 @@ const Navbar = ({
 
             <ThemeToggle />
 
-            {isAuthenticated && user && (
-              <div className="relative">
-                <button
-                  onClick={() => setNotifBarOpen(!notifBarOpen)}
-                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white dark:ring-dark-950 animate-pulse">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                <NotificationBar
-                  notifications={allNotifications}
-                  unreadCount={unreadCount}
-                  onMarkRead={onMarkRead}
-                  onMarkAllRead={onMarkAllRead}
-                  onDelete={onDeleteNotification}
-                  isOpen={notifBarOpen}
-                  onClose={() => setNotifBarOpen(false)}
-                  pushEnabled={pushEnabled}
-                  onEnablePush={onEnablePush}
-                />
-              </div>
-            )}
-
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
@@ -227,35 +198,6 @@ const Navbar = ({
 
           {/* Mobile menu toggle */}
           <div className="md:hidden flex items-center space-x-2">
-            {isAuthenticated && user && (
-              <div className="relative">
-                <button
-                  onClick={() => setNotifBarOpen(!notifBarOpen)}
-                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white dark:ring-dark-950 animate-pulse">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                <NotificationBar
-                  notifications={allNotifications}
-                  unreadCount={unreadCount}
-                  onMarkRead={onMarkRead}
-                  onMarkAllRead={onMarkAllRead}
-                  onDelete={onDeleteNotification}
-                  isOpen={notifBarOpen}
-                  onClose={() => setNotifBarOpen(false)}
-                  pushEnabled={pushEnabled}
-                  onEnablePush={onEnablePush}
-                />
-              </div>
-            )}
-
             <ThemeToggle />
 
             <button
