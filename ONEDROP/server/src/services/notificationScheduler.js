@@ -15,10 +15,10 @@ const sendBloodRequestCheckNotification = async () => {
     // Count pending blood requests
     const activeRequestsCount = await BloodRequest.countDocuments({ status: 'Pending' });
     
-    // Find all active users (donors, recipients, hospitals, admins)
-    const users = await User.find({ status: 'Active' }, '_id fullName fcmToken phone');
+    // Find all registered users (including unavailable or busy users)
+    const users = await User.find({}, '_id fullName fcmToken phone');
     if (!users || users.length === 0) {
-      console.log('[NotificationScheduler] No active users found to dispatch blood request reminders.');
+      console.log('[NotificationScheduler] No users found to dispatch blood request reminders.');
       return { success: true, count: 0 };
     }
 
@@ -88,9 +88,9 @@ const sendGreetingNotification = async (slot) => {
 
     console.log(`[NotificationScheduler] Dispatching ${greetingSlot.toUpperCase()} greeting notification...`);
     
-    const users = await User.find({ status: 'Active' }, '_id fullName fcmToken');
+    const users = await User.find({}, '_id fullName fcmToken');
     if (!users || users.length === 0) {
-      console.log('[NotificationScheduler] No active users found for greeting dispatch.');
+      console.log('[NotificationScheduler] No users found for greeting dispatch.');
       return { success: true, count: 0 };
     }
 
