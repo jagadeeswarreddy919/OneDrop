@@ -245,7 +245,7 @@ const RecipientDashboard = () => {
 
   const fetchNearbyRequests = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}&city=${user?.city || ''}`);
+      const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}`);
       setNearbyRequests(res.data.filter(r => r.status === 'Pending' && r.requester?._id !== user?._id && r.requester !== user?._id));
     } catch (err) {
       console.error('[Fetch Regional Requests Error]', err);

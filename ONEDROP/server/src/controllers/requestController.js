@@ -160,45 +160,22 @@ exports.createRequest = async (req, res) => {
         donorQuery.availabilityStatus = 'Available';
       }
 
-      // Restrict notifications: send blood requests to matching local area only.
-      // Admin alert notifications bypass location filters to reach all users system-wide.
+      // State-wide matching: send blood requests to ALL matched users in the entire requested State
       const isAdmin = req.user.role === 'Admin' || req.user.role === 'Super Admin';
       
-      if (latitude && longitude) {
-        const radiusInKm = parseFloat(req.body.radius) || 10;
-        donorQuery.location = {
-          $near: {
-            $geometry: {
-              type: 'Point',
-              coordinates: [parseFloat(longitude), parseFloat(latitude)]
-            },
-            $maxDistance: radiusInKm * 1000
-          }
-        };
-      } else if (!isAdmin) {
-        // District-wide match: query all matching donors in the requested District & State
-        if (district) {
-          donorQuery.district = new RegExp(`^${district.trim()}$`, 'i');
-        }
-        if (state) {
-          donorQuery.state = new RegExp(`^${state.trim()}$`, 'i');
-        }
+      if (state) {
+        donorQuery.state = new RegExp(`^${state.trim()}$`, 'i');
       }
 
-      // Fetch matching donors across district
+      // Fetch matching donors across state
       const matchingDonors = await User.find(donorQuery);
 
-      // Fetch matching hospitals and blood banks in the same district
+      // Fetch matching hospitals and blood banks in the same state
       const hospitalQuery = {
         role: 'Hospital'
       };
-      if (!isAdmin) {
-        if (district) {
-          hospitalQuery.district = new RegExp(`^${district.trim()}$`, 'i');
-        }
-        if (state) {
-          hospitalQuery.state = new RegExp(`^${state.trim()}$`, 'i');
-        }
+      if (state) {
+        hospitalQuery.state = new RegExp(`^${state.trim()}$`, 'i');
       }
       const matchingHospitals = await User.find(hospitalQuery);
 

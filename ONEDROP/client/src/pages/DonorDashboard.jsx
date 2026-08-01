@@ -701,9 +701,9 @@ const DonorDashboard = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        // Fetch pending requests matching donor's state and district
+        // Fetch pending requests matching donor's state
         const res = await axios.get(
-          `${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}`
+          `${API_URL}/api/requests?state=${user?.state || ''}`
         );
         // Show all pending requests that are not from the current user
         setNearbyRequests(res.data.filter((r) => r.status === 'Pending'));
@@ -1329,9 +1329,9 @@ const DonorDashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('Thank you for pledging! The request has been successfully accepted and closed.');
-      // Refresh pending requests matching donor's state and district
+      // Refresh pending requests matching donor's state
       const res = await axios.get(
-        `${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}`
+        `${API_URL}/api/requests?state=${user?.state || ''}`
       );
       setNearbyRequests(res.data.filter(r => r.status === 'Pending'));
     } catch (err) {
@@ -1354,7 +1354,7 @@ const DonorDashboard = () => {
       setSmartMatchAlert(null); // Dismiss panel
       
       // Refresh requests listing
-      const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}&district=${user?.district || ''}`);
+      const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}`);
       setNearbyRequests(res.data.filter(r => r.status === 'Pending'));
       
       // Optionally trigger direct chat with the requester
