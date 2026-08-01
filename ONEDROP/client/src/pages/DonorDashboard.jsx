@@ -412,9 +412,9 @@ const DonorDashboard = () => {
   const [reqNeededBy, setReqNeededBy] = useState('');
   const [reqEmergencyMode, setReqEmergencyMode] = useState(false);
   const [reqReason, setReqReason] = useState('');
-  const [reqState, setReqState] = useState(normalizeState(user?.state || ''));
-  const [reqDistrict, setReqDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
-  const [reqCity, setReqCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
+  const [reqState, setReqState] = useState('');
+  const [reqDistrict, setReqDistrict] = useState('');
+  const [reqCity, setReqCity] = useState('');
   const [reqPincode, setReqPincode] = useState(user?.pincode || '');
   const [reqHospitalAddress, setReqHospitalAddress] = useState(user?.address || '');
 

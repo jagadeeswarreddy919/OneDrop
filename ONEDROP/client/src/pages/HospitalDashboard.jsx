@@ -166,9 +166,9 @@ const HospitalDashboard = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [locationName, setLocationName] = useState('');
-  const [state, setState] = useState(normalizeState(user?.state || ''));
-  const [district, setDistrict] = useState(normalizeDistrict(user?.state || '', user?.district || ''));
-  const [city, setCity] = useState(normalizeCity(user?.state || '', user?.district || '', user?.city || ''));
+  const [state, setState] = useState('');
+  const [district, setDistrict] = useState('');
+  const [city, setCity] = useState('');
   const [pincode, setPincode] = useState(user?.pincode || '');
   const [bannerImage, setBannerImage] = useState('');
 
