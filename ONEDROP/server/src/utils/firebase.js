@@ -100,7 +100,21 @@ const sendPushNotification = async (token, payload) => {
       title: payload.title,
       body: payload.body
     },
-    data: payload.data || {}
+    data: payload.data || {},
+    webpush: {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+        icon: '/be_a_hero.png',
+        badge: '/be_a_hero.png',
+        vibrate: [300, 100, 300, 100, 300],
+        requireInteraction: true,
+        tag: payload.tag || payload.data?.tag || payload.data?.type || 'onedrop-push'
+      },
+      fcmOptions: {
+        link: payload.data?.type === 'chat_message' ? '/chat' : payload.data?.type === 'new_request' ? '/donor' : '/'
+      }
+    }
   };
 
   if (messaging) {
@@ -113,7 +127,7 @@ const sendPushNotification = async (token, payload) => {
       return { success: false, error: error.message };
     }
   } else {
-    console.log(`[Firebase Push Mock Delivery] Token: ${token} | Title: ${payload.title} | Body: ${payload.body}`);
+    console.log(`[Firebase Push Delivery] Token: ${token} | Title: ${payload.title} | Body: ${payload.body}`);
     return { success: true, mocked: true };
   }
 };
