@@ -811,7 +811,6 @@ const DonorDashboard = () => {
 
     socket.on('donation_verified', (data) => {
       console.log('[WebSocket] Donation Verified:', data);
-      alert(data.message || '🎉 Thank you! Your blood donation has been successfully verified.');
       setShowCertificateModal(true);
       
       // Auto refresh user profile to sync updated reward points and badges in state
@@ -824,7 +823,6 @@ const DonorDashboard = () => {
 
     socket.on('request_accepted', (data) => {
       console.log('[WebSocket] Request Accepted Alert Received:', data);
-      alert(data.message || `🎉 Good news! Your blood request has been accepted by a volunteer.`);
       fetchMyRequests(); // Reload tickets
     });
 

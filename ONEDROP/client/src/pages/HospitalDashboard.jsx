@@ -399,7 +399,6 @@ const HospitalDashboard = () => {
 
       socket.on('donation_verified', (data) => {
         console.log('[WebSocket] Donation Verified:', data);
-        alert(data.message || '🎉 Thank you! Your blood donation has been successfully verified.');
         setShowCertificateModal(true);
         
         // Auto refresh user profile to sync updated reward points and badges in state

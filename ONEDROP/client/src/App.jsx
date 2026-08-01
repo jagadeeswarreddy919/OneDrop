@@ -6,6 +6,7 @@ import { socket } from './utils/socket';
 import { logout } from './redux/authSlice';
 import { Activity, MessageSquare, LogOut, Heart, Menu, X, Sun, Moon, Bell } from 'lucide-react';
 import NotificationStack from './components/NotificationStack';
+import NotificationBar from './components/NotificationBar';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { requestFcmToken, saveFcmTokenToServer } from './utils/firebase';
 import { playNotificationSound } from './utils/sound';
@@ -82,15 +83,28 @@ const LANDING_SECTIONS = [
 ];
 
 // Main Navbar Component
-const Navbar = () => {
+const Navbar = ({
+  allNotifications = [],
+  onMarkRead,
+  onMarkAllRead,
+  onDeleteNotification,
+  pushEnabled,
+  onEnablePush
+}) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notifBarOpen, setNotifBarOpen] = useState(false);
   const location = useLocation();
   const showLandingSections = !isAuthenticated || !user;
+  const unreadCount = allNotifications.filter((n) => !n.read).length;
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out of ONEDROP?")) {
+      socket.auth = {};
+      if (socket.connected) {
+        socket.disconnect();
+      }
       dispatch(logout());
     }
   };
@@ -151,7 +165,35 @@ const Navbar = () => {
 
             <ThemeToggle />
 
+            {isAuthenticated && user && (
+              <div className="relative">
+                <button
+                  onClick={() => setNotifBarOpen(!notifBarOpen)}
+                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
+                  aria-label="Open Notifications Bar"
+                  title="Notification Bar"
+                >
+                  <Bell className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white dark:ring-dark-950 animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
 
+                <NotificationBar
+                  notifications={allNotifications}
+                  unreadCount={unreadCount}
+                  onMarkRead={onMarkRead}
+                  onMarkAllRead={onMarkAllRead}
+                  onDelete={onDeleteNotification}
+                  isOpen={notifBarOpen}
+                  onClose={() => setNotifBarOpen(false)}
+                  pushEnabled={pushEnabled}
+                  onEnablePush={onEnablePush}
+                />
+              </div>
+            )}
 
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-4">
@@ -186,6 +228,36 @@ const Navbar = () => {
 
           {/* Mobile menu toggle */}
           <div className="md:hidden flex items-center space-x-2">
+            {isAuthenticated && user && (
+              <div className="relative">
+                <button
+                  onClick={() => setNotifBarOpen(!notifBarOpen)}
+                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
+                  aria-label="Open Notifications Bar"
+                  title="Notification Bar"
+                >
+                  <Bell className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white dark:ring-dark-950 animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <NotificationBar
+                  notifications={allNotifications}
+                  unreadCount={unreadCount}
+                  onMarkRead={onMarkRead}
+                  onMarkAllRead={onMarkAllRead}
+                  onDelete={onDeleteNotification}
+                  isOpen={notifBarOpen}
+                  onClose={() => setNotifBarOpen(false)}
+                  pushEnabled={pushEnabled}
+                  onEnablePush={onEnablePush}
+                />
+              </div>
+            )}
+
             <ThemeToggle />
 
             <button
@@ -253,6 +325,7 @@ const Navbar = () => {
 
 const AppShell = () => {
   const [notifications, setNotifications] = useState([]);
+  const [allNotifications, setAllNotifications] = useState([]);
   const [pushEnabled, setPushEnabled] = useState(
     () => typeof Notification !== 'undefined' && Notification.permission === 'granted'
   );
@@ -268,12 +341,13 @@ const AppShell = () => {
           const requestUrl = error.config?.url || '';
           // Only intercept local backend API requests to prevent third-party 401/403 errors (e.g. from Nominatim/OSM) from logging the user out.
           if (requestUrl.includes(API_URL) || requestUrl.startsWith('/api/')) {
-            if (!window.isSessionExpiredAlertShowing) {
+            const currentPath = window.location.pathname;
+            if (!window.isSessionExpiredAlertShowing && currentPath !== '/login' && currentPath !== '/register') {
               window.isSessionExpiredAlertShowing = true;
               alert(error.response.data?.message || 'Your session has expired. Please log in again.');
               window.isSessionExpiredAlertShowing = false;
-              dispatch(logout());
             }
+            dispatch(logout());
           }
         }
         return Promise.reject(error);
@@ -346,8 +420,13 @@ const AppShell = () => {
 
   useEffect(() => {
     if (!isAuthenticated || !user?._id || !token) {
+      socket.auth = {};
       if (socket.connected) {
         socket.disconnect();
+      }
+      setNotifications([]);
+      if (shownNotificationIds.current) {
+        shownNotificationIds.current.clear();
       }
       return;
     }
@@ -449,6 +528,7 @@ const AppShell = () => {
     if (!isAuthenticated || !token) {
       shownNotificationIds.current.clear();
       setNotifications([]);
+      setAllNotifications([]);
       return;
     }
 
@@ -458,7 +538,10 @@ const AppShell = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const unreadNotifications = (res.data || []).filter(n => !n.read);
+        const notificationData = res.data || [];
+        setAllNotifications(notificationData);
+        
+        const unreadNotifications = notificationData.filter(n => !n.read);
         
         unreadNotifications.forEach(n => {
           if (!shownNotificationIds.current.has(n._id)) {
@@ -477,7 +560,7 @@ const AppShell = () => {
               const msg = n.message || '';
               const isTimeGreeting = msg.includes('Good Morning') || msg.includes('Good Afternoon') || msg.includes('Good Evening') || msg.includes('🌅') || msg.includes('☀️') || msg.includes('🌙');
               if (!msg.startsWith('📢') && !msg.startsWith('🎉') && !isTimeGreeting) {
-                return; // Ignore static welcome/onboarding greeting wishes
+                return;
               }
               type = 'success';
               if (msg.includes('Good Morning') || msg.includes('🌅')) title = '🌅 Good Morning';
@@ -503,12 +586,45 @@ const AppShell = () => {
     };
 
     pollNotifications();
-
-    // Poll every 1 second (1000ms) to ensure Firebase/Supabase notifications sync immediately
     const interval = setInterval(pollNotifications, 1000);
 
     return () => clearInterval(interval);
   }, [isAuthenticated, token, triggerNotification]);
+
+  const handleMarkRead = async (id) => {
+    try {
+      await axios.put(`${API_URL}/api/notifications/${id}/read`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllNotifications((prev) =>
+        prev.map((n) => (n._id === id || n.id === id ? { ...n, read: true } : n))
+      );
+    } catch (e) {
+      console.warn('Failed to mark notification read:', e.message);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await axios.put(`${API_URL}/api/notifications/read-all`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (e) {
+      console.warn('Failed to mark all notifications read:', e.message);
+    }
+  };
+
+  const handleDeleteNotification = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/api/notifications/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllNotifications((prev) => prev.filter((n) => n._id !== id && n.id !== id));
+    } catch (e) {
+      console.warn('Failed to delete notification:', e.message);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated && token && !pushEnabled) {
@@ -528,7 +644,14 @@ const AppShell = () => {
 
   return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
-        <Navbar />
+        <Navbar
+          allNotifications={allNotifications}
+          onMarkRead={handleMarkRead}
+          onMarkAllRead={handleMarkAllRead}
+          onDeleteNotification={handleDeleteNotification}
+          pushEnabled={pushEnabled}
+          onEnablePush={handleEnablePush}
+        />
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -582,10 +705,12 @@ const AppShell = () => {
           </Routes>
         </main>
 
-        <NotificationStack
-          notifications={notifications}
-          onRemove={removeNotification}
-        />
+        {isAuthenticated && user && (
+          <NotificationStack
+            notifications={notifications}
+            onRemove={removeNotification}
+          />
+        )}
         
         {/* Simple global footer */}
         <footer className="bg-white dark:bg-dark-900 border-t border-slate-200 dark:border-slate-800 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
