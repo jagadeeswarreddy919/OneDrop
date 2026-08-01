@@ -5,6 +5,10 @@ export const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_
 export const EMAILJS_ALERT_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ALERT_TEMPLATE_ID || 'template_fbkwwbo';
 export const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '8UH1zz6oDW4iYsTn4';
 
+export const EMAILJS_FEEDBACK_SERVICE_ID = import.meta.env.VITE_EMAILJS_FEEDBACK_SERVICE_ID || 'service_yzwpm2g';
+export const EMAILJS_FEEDBACK_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID || 'template_pf439ua';
+export const EMAILJS_FEEDBACK_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_FEEDBACK_PUBLIC_KEY || 'aJGnqjWBX-inDhyUy';
+
 // Initialize EmailJS Browser SDK
 try {
   if (EMAILJS_PUBLIC_KEY) {
@@ -158,6 +162,77 @@ export const sendBloodRequestAlertEmail = async (params) => {
     }
   } catch (error) {
     console.error('[EmailJS Alert Failure]:', error?.text || error?.message || error);
+    return { success: false, error: error?.message || error };
+  }
+};
+
+/**
+ * Send Contact & Feedback email via EmailJS (service_yzwpm2g / template_pf439ua)
+ * @param {Object} params - { user_email, email, from_name, name, message, subject }
+ */
+export const sendContactFeedbackEmail = async (params) => {
+  if (!params.message && !params.feedback_message) {
+    console.warn('[EmailJS Feedback] Skipping: Message body is empty.');
+    return { success: false, error: 'Empty message' };
+  }
+
+  const messageText = params.message || params.feedback_message || '';
+  const senderEmail = params.email || params.user_email || 'visitor@onedrop.org';
+  const senderName = params.from_name || params.name || senderEmail;
+
+  try {
+    const templateParams = {
+      from_name: senderName,
+      name: senderName,
+      to_name: 'ONEDROP Support Team',
+      from_email: senderEmail,
+      user_email: senderEmail,
+      email: senderEmail,
+      message: messageText,
+      feedback_message: messageText,
+      subject: params.subject || 'New Contact & Feedback Submission - ONEDROP'
+    };
+
+    console.log('[EmailJS Feedback] Dispatching feedback email using Service:', EMAILJS_FEEDBACK_SERVICE_ID, 'Template:', EMAILJS_FEEDBACK_TEMPLATE_ID);
+
+    // 1. Try sending via EmailJS SDK
+    if (EMAILJS_FEEDBACK_PUBLIC_KEY) {
+      try {
+        const response = await emailjs.send(
+          EMAILJS_FEEDBACK_SERVICE_ID,
+          EMAILJS_FEEDBACK_TEMPLATE_ID,
+          templateParams,
+          EMAILJS_FEEDBACK_PUBLIC_KEY
+        );
+        console.log('[EmailJS Feedback SDK] Delivered successfully:', response.status, response.text);
+        return { success: true, response };
+      } catch (sdkErr) {
+        console.warn('[EmailJS Feedback SDK Warning], fallback to API gateway:', sdkErr?.text || sdkErr?.message || sdkErr);
+      }
+    }
+
+    // 2. Direct HTTP API Fallback
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: EMAILJS_FEEDBACK_SERVICE_ID,
+        template_id: EMAILJS_FEEDBACK_TEMPLATE_ID,
+        user_id: EMAILJS_FEEDBACK_PUBLIC_KEY,
+        template_params: templateParams
+      })
+    });
+
+    const resText = await res.text();
+    if (res.ok) {
+      console.log('[EmailJS Feedback API Gateway] Delivered successfully:', resText);
+      return { success: true };
+    } else {
+      console.error(`[EmailJS Feedback API Error ${res.status}]:`, resText);
+      return { success: false, error: resText };
+    }
+  } catch (error) {
+    console.error('[EmailJS Feedback Failure]:', error?.text || error?.message || error);
     return { success: false, error: error?.message || error };
   }
 };

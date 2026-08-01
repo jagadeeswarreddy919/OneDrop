@@ -15,6 +15,7 @@ import { API_URL } from '../utils/api';
 import { STATES_DATA } from '../utils/statesData';
 import AiChatAssistant from '../components/AiChatAssistant';
 import { getTimeBasedGreeting } from '../utils/greeting';
+import { sendContactFeedbackEmail } from '../utils/emailjs';
 
 // Mock Blood Compatibility Chart datasets
 const COMPATIBILITY_DATA = [
@@ -189,19 +190,34 @@ const LandingPage = () => {
     setSelectedCity('');
   };
 
-  const handleFeedbackSubmit = (e) => {
+  const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackSuccess, setFeedbackSuccess] = useState('');
+
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
     if (!feedbackEmail || !feedbackMessage) return;
 
-    const targetPhoneNumber = "918500508940";
-    const messageText = `*New ONEDROP Feedback*\n\n*From:* ${feedbackEmail}\n*Message:* ${feedbackMessage}`;
-    const whatsappUrl = `https://wa.me/${targetPhoneNumber}?text=${encodeURIComponent(messageText)}`;
+    setFeedbackSending(true);
+    setFeedbackSuccess('');
+    try {
+      const result = await sendContactFeedbackEmail({
+        email: feedbackEmail,
+        message: feedbackMessage,
+        subject: 'New Contact & Feedback Submission - ONEDROP'
+      });
 
-    window.open(whatsappUrl, '_blank');
-    alert("Redirecting to WhatsApp to send feedback to ONEDROP Support...");
-
-    setFeedbackEmail('');
-    setFeedbackMessage('');
+      if (result.success) {
+        setFeedbackSuccess('Thank you! Your feedback has been sent directly to ONEDROP support via EmailJS.');
+        setFeedbackEmail('');
+        setFeedbackMessage('');
+      } else {
+        alert('Failed to deliver message via EmailJS. Please try again.');
+      }
+    } catch (err) {
+      console.error('Feedback submission error:', err);
+    } finally {
+      setFeedbackSending(false);
+    }
   };
 
   const handleSearch = async (e) => {
@@ -1284,6 +1300,11 @@ const LandingPage = () => {
           <h2 className="text-2xl font-black text-center text-slate-800 dark:text-white">Contact & Feedback</h2>
 
           <form className="space-y-4" onSubmit={handleFeedbackSubmit}>
+            {feedbackSuccess && (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                {feedbackSuccess}
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Email</label>
               <input
@@ -1300,14 +1321,18 @@ const LandingPage = () => {
               <textarea
                 rows="4"
                 required
-                placeholder="Write your question..."
+                placeholder="Write your question or feedback..."
                 value={feedbackMessage}
                 onChange={(e) => setFeedbackMessage(e.target.value)}
                 className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 dark:text-white"
               />
             </div>
-            <button type="submit" className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-dark-800 dark:hover:bg-dark-700 text-white font-extrabold rounded-lg text-xs transition-all uppercase tracking-wider">
-              Send Message
+            <button
+              type="submit"
+              disabled={feedbackSending}
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-dark-800 dark:hover:bg-dark-700 disabled:opacity-50 text-white font-extrabold rounded-lg text-xs transition-all uppercase tracking-wider flex items-center justify-center gap-2"
+            >
+              {feedbackSending ? 'Sending via EmailJS...' : 'Send Message'}
             </button>
           </form>
         </div>
