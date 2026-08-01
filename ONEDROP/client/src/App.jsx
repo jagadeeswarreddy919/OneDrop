@@ -643,7 +643,7 @@ const AppShell = () => {
     };
 
     pollNotifications();
-    const interval = setInterval(pollNotifications, 5000);
+    const interval = setInterval(pollNotifications, 30000);
 
     return () => clearInterval(interval);
   }, [isAuthenticated, token, triggerNotification]);

@@ -908,8 +908,8 @@ const DonorDashboard = () => {
     
     fetchNotifications();
 
-    // Background polling every 1 second to fetch real-time updates seamlessly in the UI list
-    const interval = setInterval(fetchNotifications, 1000);
+    // Background polling every 30 seconds for fallback sync (real-time is WebSocket & FCM push driven)
+    const interval = setInterval(fetchNotifications, 30000);
 
     return () => clearInterval(interval);
   }, [token]);

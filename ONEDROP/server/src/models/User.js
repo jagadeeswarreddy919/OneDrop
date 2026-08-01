@@ -106,5 +106,10 @@ userSchema.pre('save', async function(next) {
 });
 
 userSchema.index({ location: '2dsphere' });
+userSchema.index({ role: 1, bloodGroup: 1, state: 1, district: 1, city: 1 });
+userSchema.index({ status: 1, role: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ phone: 1 });
+userSchema.index({ referralCode: 1 });
 
 module.exports = mongoose.model('User', userSchema);

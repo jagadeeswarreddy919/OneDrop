@@ -94,34 +94,33 @@ const AdminDashboard = () => {
     try {
       if (showLoader) setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
-      
-      // Fetch administrative metrics summary
-      const metricsRes = await axios.get(`${API_URL}/api/admin/metrics`, { headers });
-      setMetrics(metricsRes.data);
 
-      // Fetch absolute users list
-      const usersRes = await axios.get(`${API_URL}/api/admin/users`, { headers });
-      setUsersList(usersRes.data);
+      // Parallelize administrative telemetry requests for high concurrency and fast loading
+      const [
+        metricsRes,
+        usersRes,
+        requestsRes,
+        campaignsRes,
+        blogsRes,
+        galleryRes,
+        logsRes
+      ] = await Promise.all([
+        axios.get(`${API_URL}/api/admin/metrics`, { headers }).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/admin/users`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/api/requests`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/api/campaigns`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/api/blogs`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/api/gallery`).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/api/admin/notification-logs`, { headers }).catch(() => ({ data: [] }))
+      ]);
 
-      // Fetch blood assist tickets
-      const requestsRes = await axios.get(`${API_URL}/api/requests`, { headers });
-      setRequestsList(requestsRes.data);
-
-      // Fetch donation camp campaigns
-      const campaignsRes = await axios.get(`${API_URL}/api/campaigns`, { headers });
-      setCampaignsList(campaignsRes.data);
-
-      // Fetch CMS blogs
-      const blogsRes = await axios.get(`${API_URL}/api/blogs`, { headers });
-      setBlogsList(blogsRes.data);
-
-      // Fetch Gallery Items
-      const galleryRes = await axios.get(`${API_URL}/api/gallery`);
-      setGalleryList(galleryRes.data);
-
-      // Fetch admin notification logs
-      const logsRes = await axios.get(`${API_URL}/api/admin/notification-logs`, { headers });
-      setBroadcastLogs(logsRes.data);
+      if (metricsRes.data) setMetrics(metricsRes.data);
+      if (usersRes.data) setUsersList(usersRes.data);
+      if (requestsRes.data) setRequestsList(requestsRes.data);
+      if (campaignsRes.data) setCampaignsList(campaignsRes.data);
+      if (blogsRes.data) setBlogsList(blogsRes.data);
+      if (galleryRes.data) setGalleryList(galleryRes.data);
+      if (logsRes.data) setBroadcastLogs(logsRes.data);
 
     } catch (err) {
       console.error('Error fetching administrative telemetry', err);

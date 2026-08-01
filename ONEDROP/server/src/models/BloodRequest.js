@@ -52,4 +52,9 @@ bloodRequestSchema.pre('save', function(next) {
   next();
 });
 
+bloodRequestSchema.index({ location: '2dsphere' });
+bloodRequestSchema.index({ status: 1, bloodGroup: 1, state: 1, district: 1 });
+bloodRequestSchema.index({ requester: 1, status: 1 });
+bloodRequestSchema.index({ 'donorsPledged.donor': 1 });
+
 module.exports = mongoose.model('BloodRequest', bloodRequestSchema);

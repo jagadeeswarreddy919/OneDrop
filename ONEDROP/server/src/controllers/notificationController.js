@@ -5,7 +5,9 @@ exports.getNotifications = async (req, res) => {
     const notifications = await Notification.find({ recipient: req.user.id })
       .populate('donor', 'fullName phone bloodGroup profileImage')
       .populate('bloodRequest', 'patientName hospitalName bloodGroup unitsRequired emergencyMode city state')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
     
     res.status(200).json(notifications);
   } catch (error) {
