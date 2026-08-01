@@ -6,7 +6,7 @@ import {
   Heart, Activity, FileText, CheckCircle, Clock, 
   ShieldAlert, MessageSquare, X, Search, Filter, Sparkles, 
   Phone, Award, Bell, AlertCircle, HelpCircle, MapPin,
-  RefreshCw, Loader2, Printer, Users, Compass, Globe, Layout, Home, Menu
+  RefreshCw, Loader2, Printer, Users, Compass, Globe, Layout, Home, Menu, Mail
 } from 'lucide-react';
 import { 
   firebaseSendEmailVerification, 

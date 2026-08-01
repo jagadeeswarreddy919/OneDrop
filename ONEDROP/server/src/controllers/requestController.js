@@ -150,15 +150,8 @@ exports.createRequest = async (req, res) => {
       const donorQuery = {
         _id: { $ne: req.user.id },
         role: 'Donor',
-        bloodGroup: bloodGroup,
-        // Exclude 'Busy' and 'Not Available'
-        availabilityStatus: { $in: ['Available', 'Emergency Only'] }
+        bloodGroup: bloodGroup
       };
-
-      // If NOT in emergency mode, exclude 'Emergency Only' donors
-      if (!emergencyMode) {
-        donorQuery.availabilityStatus = 'Available';
-      }
 
       // State-wide matching: send blood requests to ALL matched users in the entire requested State
       const isAdmin = req.user.role === 'Admin' || req.user.role === 'Super Admin';

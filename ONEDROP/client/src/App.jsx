@@ -476,14 +476,33 @@ const AppShell = () => {
 
     socket.on('new_blood_request', (data) => {
       if (user?.role !== 'Donor') return;
+
+      const notifId = data.requestId || data.request?._id || `notif-${Date.now()}`;
+      const newNotifObj = {
+        _id: notifId,
+        id: notifId,
+        type: data.emergencyMode ? 'emergency_request' : 'new_request',
+        message: `🚨 ${data.emergencyMode ? 'Emergency' : 'New'} Blood Request: ${data.bloodGroup} needed for ${data.patientName} at ${data.hospitalName}, ${data.place || ''}.`,
+        bloodRequest: data.request || { _id: notifId, patientName: data.patientName, hospitalName: data.hospitalName, bloodGroup: data.bloodGroup, emergencyMode: data.emergencyMode },
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+
+      setAllNotifications(prev => [newNotifObj, ...prev.filter(n => (n._id || n.id) !== notifId)]);
+
       triggerNotification({
-        id: Date.now(),
+        id: notifId,
         title: data.emergencyMode ? '🚨 Emergency blood match' : '🩸 New blood request',
         message: `${data.patientName} needs ${data.bloodGroup} at ${data.hospitalName}`,
         type: 'warning',
         requesterId: data.requesterId || data.requester,
         chatPartnerId: data.requesterId || data.requester
       });
+    });
+
+    socket.on('new_notification', (data) => {
+      if (!data) return;
+      setAllNotifications(prev => [data, ...prev.filter(n => (n._id || n.id) !== (data._id || data.id))]);
     });
 
     socket.on('request_accepted', (data) => {
