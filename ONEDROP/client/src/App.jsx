@@ -389,8 +389,20 @@ const AppShell = () => {
     }
 
     socket.on('greeting', (data) => {
+      const notifId = data.id || `greeting-${Date.now()}`;
+      const notifObj = {
+        _id: notifId,
+        id: notifId,
+        type: 'greeting',
+        title: data.title || '👋 Welcome Greeting',
+        message: data.message,
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      setAllNotifications(prev => [notifObj, ...prev.filter(n => (n._id || n.id) !== notifId)]);
+
       triggerNotification({
-        id: Date.now(),
+        id: notifId,
         title: data.title || 'Welcome',
         message: data.message,
         type: 'success'
@@ -398,6 +410,21 @@ const AppShell = () => {
     });
 
     socket.on('chat_notification', (data) => {
+      const notifId = data.id || `chat-${Date.now()}`;
+      const notifObj = {
+        _id: notifId,
+        id: notifId,
+        type: 'chat_message',
+        title: `💬 New message from ${data.senderName || 'Contact'}`,
+        message: data.message,
+        donor: data.senderId,
+        chatPartnerId: data.senderId,
+        chatId: data.chatId,
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      setAllNotifications(prev => [notifObj, ...prev.filter(n => (n._id || n.id) !== notifId)]);
+
       // Smart active-chat suppression
       const params = new URLSearchParams(window.location.search);
       const activeChatId = params.get('chatId');
@@ -407,7 +434,7 @@ const AppShell = () => {
       }
 
       triggerNotification({
-        id: Date.now(),
+        id: notifId,
         title: `💬 ${data.senderName || 'New message'}`,
         message: data.message,
         type: 'chat',
@@ -449,8 +476,23 @@ const AppShell = () => {
 
     socket.on('request_accepted', (data) => {
       if (user?.role !== 'Recipient') return;
+
+      const notifId = data.id || `accepted-${Date.now()}`;
+      const notifObj = {
+        _id: notifId,
+        id: notifId,
+        type: 'request_accepted',
+        title: '❤️ Request Accepted',
+        message: data.message || 'A donor accepted your blood request.',
+        donor: data.donorId || data.donor?._id,
+        chatPartnerId: data.donorId || data.donor?._id,
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      setAllNotifications(prev => [notifObj, ...prev.filter(n => (n._id || n.id) !== notifId)]);
+
       triggerNotification({
-        id: Date.now(),
+        id: notifId,
         title: '❤️ Request accepted',
         message: data.message || 'A donor accepted your blood request.',
         type: 'success',
@@ -460,8 +502,20 @@ const AppShell = () => {
     });
 
     socket.on('admin_broadcast', (data) => {
+      const notifId = data.id || `admin-${Date.now()}`;
+      const notifObj = {
+        _id: notifId,
+        id: notifId,
+        type: 'admin_broadcast',
+        title: data.title || '📢 Admin Broadcast',
+        message: data.message,
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      setAllNotifications(prev => [notifObj, ...prev.filter(n => (n._id || n.id) !== notifId)]);
+
       triggerNotification({
-        id: Date.now(),
+        id: notifId,
         title: data.title || '📢 Admin Broadcast',
         message: data.message,
         type: data.type || 'warning'
