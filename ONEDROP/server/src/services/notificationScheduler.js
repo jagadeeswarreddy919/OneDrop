@@ -32,6 +32,7 @@ const sendBloodRequestCheckNotification = async () => {
 
     const notificationDocs = [];
     const userIdsToNotify = [];
+    const sentFcmTokens = new Set();
 
     for (const user of users) {
       userIdsToNotify.push(user._id);
@@ -43,14 +44,17 @@ const sendBloodRequestCheckNotification = async () => {
         createdAt: new Date()
       });
 
-      // Send FCM push notification if token exists
-      if (user.fcmToken) {
+      // Send 1 single FCM push notification per unique device token
+      if (user.fcmToken && !sentFcmTokens.has(user.fcmToken)) {
+        sentFcmTokens.add(user.fcmToken);
         sendPushNotification(user.fcmToken, {
           title: messageTitle,
           body: messageBody,
+          tag: 'onedrop-reminder',
           data: {
             type: 'blood_request_reminder',
-            activeRequestsCount: activeRequestsCount.toString()
+            activeRequestsCount: activeRequestsCount.toString(),
+            tag: 'onedrop-reminder'
           }
         }).catch(err => console.error(`[NotificationScheduler] FCM push error for user ${user._id}:`, err.message));
       }
@@ -96,6 +100,7 @@ const sendGreetingNotification = async (slot) => {
 
     const notificationDocs = [];
     const userIdsToNotify = [];
+    const sentFcmTokens = new Set();
 
     for (const user of users) {
       const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Lifesaver';
@@ -122,14 +127,17 @@ const sendGreetingNotification = async (slot) => {
         createdAt: new Date()
       });
 
-      // Send FCM push notification if token exists
-      if (user.fcmToken) {
+      // Send 1 single FCM push notification per unique device token with fixed tag
+      if (user.fcmToken && !sentFcmTokens.has(user.fcmToken)) {
+        sentFcmTokens.add(user.fcmToken);
         sendPushNotification(user.fcmToken, {
           title,
           body: message,
+          tag: 'onedrop-greeting',
           data: {
             type: 'greeting',
-            slot: greetingSlot
+            slot: greetingSlot,
+            tag: 'onedrop-greeting'
           }
         }).catch(err => console.error(`[NotificationScheduler] Greeting FCM error for user ${user._id}:`, err.message));
       }

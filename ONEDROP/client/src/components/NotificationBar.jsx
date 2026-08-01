@@ -131,7 +131,10 @@ const NotificationBar = ({
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
             <button
-              onClick={() => onMarkAllRead?.()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkAllRead?.();
+              }}
               className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-sans"
               title="Mark all notifications as read"
             >
@@ -139,7 +142,10 @@ const NotificationBar = ({
             </button>
           )}
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose?.();
+            }}
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -251,7 +257,10 @@ const NotificationBar = ({
                   <div className="flex items-center gap-2 mt-2">
                     {(notif.chatPartnerId || notif.donor || notif.bloodRequest || notif.type === 'chat_message' || notif.type === 'chat') && (
                       <button
-                        onClick={() => handleAction(notif)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAction(notif);
+                        }}
                         className="px-2.5 py-1 bg-primary-600 hover:bg-primary-700 text-white font-extrabold rounded-md text-[10px] flex items-center gap-1 shadow-xs transition-all active:scale-95"
                       >
                         Action <ExternalLink className="w-2.5 h-2.5" />
@@ -260,7 +269,10 @@ const NotificationBar = ({
 
                     {isUnread && (
                       <button
-                        onClick={() => onMarkRead?.(notifId)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMarkRead?.(notifId);
+                        }}
                         className="text-[10px] font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
                       >
                         Mark read
@@ -268,7 +280,10 @@ const NotificationBar = ({
                     )}
 
                     <button
-                      onClick={() => onDelete?.(notifId)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete?.(notifId);
+                      }}
                       className="ml-auto opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition-all p-1"
                       title="Delete notification"
                     >
