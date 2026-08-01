@@ -124,8 +124,8 @@ const RegisterPage = () => {
     shouldUnregister: false,
     defaultValues: {
       role: 'Donor',
-      bloodGroup: 'O+',
-      gender: 'Male',
+      bloodGroup: '',
+      gender: '',
       terms: false,
       privacy: false
     }
@@ -906,6 +906,7 @@ const RegisterPage = () => {
                               {...register('bloodGroup')}
                               className="w-full pl-9 pr-2 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-red-600 outline-none"
                             >
+                              <option value="">Select Blood Group</option>
                               {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(g => (
                                 <option key={g} value={g}>{g}</option>
                               ))}
@@ -942,6 +943,7 @@ const RegisterPage = () => {
                             {...register('gender')}
                             className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none"
                           >
+                            <option value="">Select Gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>

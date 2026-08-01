@@ -406,7 +406,7 @@ const DonorDashboard = () => {
 
   // Donor-Side Patient Request States
   const [reqPatientName, setReqPatientName] = useState('');
-  const [reqBloodGroup, setReqBloodGroup] = useState('O+');
+  const [reqBloodGroup, setReqBloodGroup] = useState('');
   const [reqUnitsRequired, setReqUnitsRequired] = useState(1);
   const [reqHospitalName, setReqHospitalName] = useState('');
   const [reqNeededBy, setReqNeededBy] = useState('');
@@ -2297,10 +2297,12 @@ const DonorDashboard = () => {
                             <div>
                               <label className="block text-[11px] font-bold text-slate-500 mb-1">Blood Group</label>
                               <select
+                                required
                                 value={reqBloodGroup}
                                 onChange={(e) => setReqBloodGroup(e.target.value)}
                                 className="w-full p-2.5 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-primary-500 font-extrabold"
                               >
+                                <option value="">Select Blood Group</option>
                                 {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(g => <option key={g} value={g}>{g}</option>)}
                               </select>
                             </div>

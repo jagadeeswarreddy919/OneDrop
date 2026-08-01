@@ -179,7 +179,7 @@ const HospitalDashboard = () => {
 
   // Request Blood Form state
   const [patientName, setPatientName] = useState('');
-  const [bloodGroup, setBloodGroup] = useState('O+');
+  const [bloodGroup, setBloodGroup] = useState('');
   const [unitsRequired, setUnitsRequired] = useState(1);
   const [neededBy, setNeededBy] = useState('');
   const [emergencyMode, setEmergencyMode] = useState(false);
@@ -1777,10 +1777,12 @@ const HospitalDashboard = () => {
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Blood Group Needed</label>
                   <select
+                    required
                     value={editBloodGroup}
                     onChange={(e) => setEditBloodGroup(e.target.value)}
                     className="w-full p-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-primary-600 font-bold outline-none"
                   >
+                    <option value="">Select Blood Group</option>
                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
