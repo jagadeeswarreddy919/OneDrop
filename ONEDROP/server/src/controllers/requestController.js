@@ -353,8 +353,8 @@ exports.pledgeDonation = async (req, res) => {
       status: 'Pledged'
     });
 
-    // Update status to Fulfilled, acceptedBy, and requestStatus
-    request.status = 'Fulfilled';
+    // Update status to Accepted, acceptedBy, and requestStatus
+    request.status = 'Accepted';
     request.requestStatus = 'Accepted';
     request.acceptedBy = req.user.id;
     await request.save();
@@ -515,23 +515,45 @@ exports.updatePledgeStatus = async (req, res) => {
 
         await donor.save();
 
-        // Create persistent appreciation greeting notification in MongoDB
+        // Create persistent appreciation greeting & certificate notifications in MongoDB
         try {
           const appreciationMessage = `🎉 Thank you, ${donor.fullName}! Your blood donation for ${request.patientName} has been successfully verified. You have earned 200 Reward Points and an Appreciation Certificate! ❤️`;
-          await Notification.create({
+          const greetingNotif = await Notification.create({
             recipient: donor._id,
             type: 'greeting',
             message: appreciationMessage,
             requestStatus: 'None'
           });
 
-          // Dispatch live socket notification to donor
+          const certNotif = await Notification.create({
+            recipient: donor._id,
+            type: 'certificate_issued',
+            message: `📜 Appreciation Certificate Issued! Thank you ${donor.fullName} for donating blood for ${request.patientName}. View your certificate in your dashboard profile console.`,
+            requestStatus: 'None'
+          });
+
+          // Dispatch live socket notifications to donor
           notifyUser(donor._id, 'donation_verified', {
             requestId: request._id,
             message: appreciationMessage,
             rewardPoints: 200,
             certificate: true
           });
+          notifyUser(donor._id, 'new_notification', greetingNotif);
+          notifyUser(donor._id, 'new_notification', certNotif);
+
+          // Dispatch FCM push notification to donor status bar
+          if (donor.fcmToken) {
+            sendPushNotification(donor.fcmToken, {
+              title: '🎉 Thank You for Your Lifesaving Blood Donation!',
+              body: `Your donation for ${request.patientName} has been verified. +200 Reward Points & Certificate Issued! ❤️`,
+              tag: 'onedrop-certificate',
+              data: {
+                type: 'certificate_issued',
+                requestId: request._id.toString()
+              }
+            }).catch(err => console.error('[Verify Alerts] FCM push failed:', err.message));
+          }
 
           // Send Thank You Email and SMS to donor
           try {

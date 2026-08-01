@@ -474,6 +474,29 @@ const AppShell = () => {
       setAllNotifications(prev => [data, ...prev.filter(n => (n._id || n.id) !== (data._id || data.id))]);
     });
 
+    socket.on('donation_verified', (data) => {
+      if (user?.role !== 'Donor') return;
+
+      const notifId = data.id || `verified-${Date.now()}`;
+      const notifObj = {
+        _id: notifId,
+        id: notifId,
+        type: 'greeting',
+        title: '🎉 Donation Verified & Certificate Issued!',
+        message: data.message || 'Your blood donation has been verified. +200 Reward Points and Appreciation Certificate awarded!',
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      setAllNotifications(prev => [notifObj, ...prev.filter(n => (n._id || n.id) !== notifId)]);
+
+      triggerNotification({
+        id: notifId,
+        title: '🎉 Thank You for Your Blood Donation!',
+        message: data.message || 'Donation verified. Certificate issued!',
+        type: 'success'
+      });
+    });
+
     socket.on('request_accepted', (data) => {
       if (user?.role !== 'Recipient') return;
 
