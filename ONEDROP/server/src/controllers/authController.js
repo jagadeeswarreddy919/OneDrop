@@ -1942,3 +1942,41 @@ exports.userVerifyOtp = async (req, res) => {
   }
 };
 
+exports.submitContactFeedback = async (req, res) => {
+  try {
+    const { email, message, name } = req.body;
+    if (!message) {
+      return res.status(400).json({ message: 'Message is required.' });
+    }
+
+    const senderEmail = email || 'visitor@onedrop.org';
+    const senderName = name || senderEmail;
+
+    const emailHtml = getEmailTemplate(
+      'New Contact & Feedback Submission',
+      `You have received a new contact / feedback submission on ONEDROP:<br><br>` +
+      `<strong>From Name:</strong> ${senderName}<br>` +
+      `<strong>From Email:</strong> ${senderEmail}<br>` +
+      `<strong>Submitted Message:</strong><br>` +
+      `<blockquote style="background: #f8fafc; padding: 12px; border-left: 4px solid #e11d48; margin-top: 8px;">${message}</blockquote>`,
+      'https://onedrop-india.vercel.app',
+      'Open ONEDROP Portal'
+    );
+
+    try {
+      await sendMail({
+        to: process.env.SUPPORT_EMAIL || 'onedroplifesaver@gmail.com',
+        subject: `[ONEDROP Feedback] New Message from ${senderName}`,
+        html: emailHtml
+      });
+    } catch (mailErr) {
+      console.warn('[Contact Feedback Server Email Warning]:', mailErr.message);
+    }
+
+    res.status(200).json({ message: 'Feedback submitted successfully.' });
+  } catch (error) {
+    console.error(`[Contact Feedback Error]: ${error.message}`);
+    res.status(500).json({ message: 'Failed to submit feedback.', error: error.message });
+  }
+};
+

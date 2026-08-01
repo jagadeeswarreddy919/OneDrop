@@ -44,4 +44,7 @@ router.post('/user-verify-otp', authController.userVerifyOtp);
 router.post('/admin-resend-sms', authController.adminResendSms);
 router.post('/user-resend-sms', authController.userResendSms);
 
+// Public Contact & Feedback Submission Route
+router.post('/contact-feedback', authController.submitContactFeedback);
+
 module.exports = router;

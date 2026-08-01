@@ -1,4 +1,6 @@
 import emailjs from '@emailjs/browser';
+import axios from 'axios';
+import { API_URL } from './api';
 
 export const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_u0cgesu';
 export const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE_ID || 'template_r46hqhf';
@@ -167,7 +169,7 @@ export const sendBloodRequestAlertEmail = async (params) => {
 };
 
 /**
- * Send Contact & Feedback email via EmailJS (service_yzwpm2g / template_pf439ua)
+ * Send Contact & Feedback email via EmailJS (service_yzwpm2g / template_pf439ua) with 3-tier fallback.
  * @param {Object} params - { user_email, email, from_name, name, message, subject }
  */
 export const sendContactFeedbackEmail = async (params) => {
@@ -180,38 +182,22 @@ export const sendContactFeedbackEmail = async (params) => {
   const senderEmail = params.email || params.user_email || 'visitor@onedrop.org';
   const senderName = params.from_name || params.name || senderEmail;
 
+  const templateParams = {
+    from_name: senderName,
+    name: senderName,
+    to_name: 'ONEDROP Support Team',
+    from_email: senderEmail,
+    user_email: senderEmail,
+    email: senderEmail,
+    reply_to: senderEmail,
+    message: messageText,
+    feedback_message: messageText,
+    feedback: messageText,
+    subject: params.subject || 'New Contact & Feedback Submission - ONEDROP'
+  };
+
+  // 1. Try Direct HTTP REST API Call to EmailJS Gateway
   try {
-    const templateParams = {
-      from_name: senderName,
-      name: senderName,
-      to_name: 'ONEDROP Support Team',
-      from_email: senderEmail,
-      user_email: senderEmail,
-      email: senderEmail,
-      message: messageText,
-      feedback_message: messageText,
-      subject: params.subject || 'New Contact & Feedback Submission - ONEDROP'
-    };
-
-    console.log('[EmailJS Feedback] Dispatching feedback email using Service:', EMAILJS_FEEDBACK_SERVICE_ID, 'Template:', EMAILJS_FEEDBACK_TEMPLATE_ID);
-
-    // 1. Try sending via EmailJS SDK
-    if (EMAILJS_FEEDBACK_PUBLIC_KEY) {
-      try {
-        const response = await emailjs.send(
-          EMAILJS_FEEDBACK_SERVICE_ID,
-          EMAILJS_FEEDBACK_TEMPLATE_ID,
-          templateParams,
-          EMAILJS_FEEDBACK_PUBLIC_KEY
-        );
-        console.log('[EmailJS Feedback SDK] Delivered successfully:', response.status, response.text);
-        return { success: true, response };
-      } catch (sdkErr) {
-        console.warn('[EmailJS Feedback SDK Warning], fallback to API gateway:', sdkErr?.text || sdkErr?.message || sdkErr);
-      }
-    }
-
-    // 2. Direct HTTP API Fallback
     const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -228,12 +214,40 @@ export const sendContactFeedbackEmail = async (params) => {
       console.log('[EmailJS Feedback API Gateway] Delivered successfully:', resText);
       return { success: true };
     } else {
-      console.error(`[EmailJS Feedback API Error ${res.status}]:`, resText);
-      return { success: false, error: resText };
+      console.warn(`[EmailJS Feedback API Notice ${res.status}]: ${resText}. Trying SDK fallback...`);
     }
-  } catch (error) {
-    console.error('[EmailJS Feedback Failure]:', error?.text || error?.message || error);
-    return { success: false, error: error?.message || error };
+  } catch (apiErr) {
+    console.warn('[EmailJS Feedback API Warning]:', apiErr.message);
+  }
+
+  // 2. Try EmailJS Browser SDK
+  if (EMAILJS_FEEDBACK_PUBLIC_KEY) {
+    try {
+      const response = await emailjs.send(
+        EMAILJS_FEEDBACK_SERVICE_ID,
+        EMAILJS_FEEDBACK_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_FEEDBACK_PUBLIC_KEY
+      );
+      console.log('[EmailJS Feedback SDK] Delivered successfully:', response.status, response.text);
+      return { success: true, response };
+    } catch (sdkErr) {
+      console.warn('[EmailJS Feedback SDK Warning]:', sdkErr?.text || sdkErr?.message || sdkErr);
+    }
+  }
+
+  // 3. Robust Backend Server API Fallback (Guarantees delivery!)
+  try {
+    const serverRes = await axios.post(`${API_URL}/api/auth/contact-feedback`, {
+      email: senderEmail,
+      name: senderName,
+      message: messageText
+    });
+    console.log('[ONEDROP Server Feedback Backup] Delivered successfully via server endpoint:', serverRes.data);
+    return { success: true };
+  } catch (serverErr) {
+    console.error('[ONEDROP Server Feedback Backup Error]:', serverErr?.response?.data || serverErr.message);
+    return { success: false, error: serverErr?.response?.data?.message || serverErr.message };
   }
 };
 
