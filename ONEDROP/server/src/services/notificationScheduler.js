@@ -103,14 +103,14 @@ const sendGreetingNotification = async (slot) => {
       let message = '';
 
       if (greetingSlot === 'morning') {
-        title = 'Good Morning! 🌅';
-        message = `Good Morning, ${firstName}! Start your day with ONEDROP. Your blood donation can save a life today.`;
+        title = 'Good Morning! 🌅 Welcome to ONEDROP';
+        message = `Good Morning, ${firstName}! 🌅 Welcome to ONEDROP — your active blood donor bridge. Explore active blood requests and verify your donor availability today!`;
       } else if (greetingSlot === 'afternoon') {
-        title = 'Good Afternoon! ☀️';
-        message = `Good Afternoon, ${firstName}! Take a moment to check urgent blood requests on ONEDROP.`;
+        title = 'Good Afternoon! ☀️ ONEDROP Community Update';
+        message = `Good Afternoon, ${firstName}! ☀️ Stay updated with ONEDROP. Check certified blood bank inventories and active patient requests in your state.`;
       } else {
-        title = 'Good Evening! 🌙';
-        message = `Good Evening, ${firstName}! Check ONEDROP to see if any patients nearby need blood assistance.`;
+        title = 'Good Evening! 🌙 ONEDROP Evening Review';
+        message = `Good Evening, ${firstName}! 🌙 Thank you for supporting the ONEDROP lifesaver network. Review local blood storage levels and emergency requests tonight.`;
       }
 
       userIdsToNotify.push(user._id);
