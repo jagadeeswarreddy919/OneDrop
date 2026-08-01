@@ -2,34 +2,34 @@
 
 [![Production Status](https://img.shields.io/badge/Vercel-Production%20Live-emerald?style=for-the-badge&logo=vercel)](https://onedrop-india.vercel.app)
 [![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node.js%20%7C%20MongoDB%20%7C%20Socket.io-blue?style=for-the-badge)](https://onedrop-india.vercel.app)
-[![Capacity](https://img.shields.io/badge/Capacity-50k%20Concurrent%20Users-rose?style=for-the-badge)](https://onedrop-india.vercel.app)
 
-**ONEDROP** is a full-stack blood donation platform that connects donors, recipients, hospitals, and administrators through real-time communication, intelligent matching, and emergency notifications.
+**ONEDROP** is a full-stack blood donation platform that connects donors, recipients, hospitals, and administrators through real-time communication, location-based matching, and emergency notifications.
 
 ---
 
-## 🛠️ Architecture & Core System Features
+## 🛠️ Key Technical Features & Implementation
 
-### 🩸 Location-Based Matching & Emergency Dispatch
-- **State & District Geocoding**: Matches blood requests with active donors across all 29 Indian states through hierarchical location indexing without external paid mapping API dependencies.
-- **Multi-Channel Alert Dispatch**: Dispatches WebSocket events, SMS dispatches, email notifications, and FCM push notifications to eligible donors when an emergency request is created.
+### 🔐 Authentication & Access Control
+- **JWT Authentication**: Secure token-based user session management with password hashing using `bcryptjs`.
+- **Role-Based Authorization**: Middleware-enforced access control across 5 user roles (`Donor`, `Recipient`, `Hospital`, `Admin`, `Super Admin`).
+
+### 🩸 Location-Based Matching Engine
+- **Hierarchical Location Indexing**: Matches blood requests with donors across Indian states, districts, and cities without paid external map API dependencies.
 - **Two-Stage Request Lifecycle**:
-  - Pledging a request sets its status to **`Accepted`**, keeping the ticket open for direct donor-recipient coordination via real-time chat.
-  - When the requester marks the donation as verified, the status transitions to **`Fulfilled`**, awarding **+200 Reward Points**, a thank-you notification, and an **Official Appreciation Certificate** to the donor.
+  - Pledging a request transitions status to **`Accepted`**, keeping the ticket open for direct communication via real-time chat.
+  - Verification by the requester transitions status to **`Fulfilled`**, awarding **+200 Reward Points**, a thank-you notification, and an **Appreciation Certificate**.
 
-### 🔔 Real-Time Notification Pipeline
-- **Sidebar Notification Center**: Consolidates all notifications (blood matches, chat messages, greetings, admin announcements) into the sidebar console across donor, recipient, and hospital dashboards.
-- **Cross-Platform FCM WebPush**: Native status bar push notifications configured with custom icons, badges, vibration patterns, and deep-link routing.
-- **Automated Greetings**: Scheduled morning, afternoon, and evening notifications.
+### ⚡ Real-Time Communication & Notifications
+- **Socket.IO Real-Time Communication**: Event-driven WebSockets for instant message delivery, live request alerts, and status updates.
+- **Firebase Cloud Messaging (FCM)**: Cross-platform background WebPush status bar notifications with custom icons, badges, vibration patterns, and deep-link routing.
+- **Unified Notification Center**: React sidebar component displaying blood request alerts, chat messages, scheduled greetings, and admin broadcasts.
+- **Multi-Channel Dispatch**: Automated SMS dispatches and EmailJS integration for direct email notifications.
 
-### ⚡ High-Concurrency & System Scaling (50,000 Concurrent Users)
-- **MongoDB Compound Indexing**: Compound indexes on `User`, `BloodRequest`, and `Notification` models for fast geospatial and location-hierarchy queries.
-- **`.lean()` Execution**: Bypasses Mongoose document hydration on high-throughput read operations to reduce memory usage.
-- **Parallel Telemetry Loading**: Admin dashboard telemetry requests execute in parallel via `Promise.all`, reducing load times (~150ms).
-- **Optimized Network Sync**: 30-second background polling fallback coupled with instant WebSocket & FCM push delivery.
-
-### 📧 3-Tier Contact & Feedback Delivery
-- REST API gateway with browser SDK fallback and server-side fallback (`POST /api/auth/contact-feedback`).
+### 📊 Performance & Optimization
+- **MongoDB Indexing**: Compound indexes on `User`, `BloodRequest`, and `Notification` collections for location filtering and fast query execution.
+- **`.lean()` Execution**: Bypasses Mongoose document hydration on read endpoints to reduce server memory overhead.
+- **Concurrent API Requests**: Admin dashboard telemetry queries executed in parallel using `Promise.all` (~150ms execution).
+- **Intelligent Synchronization**: 30-second background polling fallback coupled with event-driven WebSockets.
 
 ---
 
@@ -38,8 +38,9 @@
 | Layer | Technologies |
 | :--- | :--- |
 | **Frontend** | React 18, Vite, Redux Toolkit, TailwindCSS, Framer Motion, Lucide React |
-| **Backend** | Node.js, Express.js, Socket.io, Mongoose (MongoDB Atlas), Nodemailer |
-| **Push & Gateway** | Firebase Cloud Messaging (FCM Admin SDK), Service Worker WebPush API |
+| **Backend** | Node.js, Express.js, Socket.IO, Mongoose (MongoDB Atlas), Nodemailer |
+| **Security & Auth** | JWT (JSON Web Tokens), Bcryptjs, Express Rate Limit, Helmet |
+| **Push & Messaging** | Firebase Cloud Messaging (FCM Admin SDK), Service Worker WebPush API |
 | **Deployment** | Vercel (Frontend SPA), Node Server Hosting (Backend API) |
 
 ---
@@ -48,10 +49,10 @@
 
 ```
 ONEDROP/
-├── client/                     # Frontend React SPA
-│   ├── public/                 # Static assets & Firebase Service Worker (firebase-messaging-sw.js)
+├── client/                     # Responsive React SPA
+│   ├── public/                 # Static assets & Service Worker (firebase-messaging-sw.js)
 │   ├── src/
-│   │   ├── components/        # Reusable UI components (NotificationBar, Navbar, Certificate)
+│   │   ├── components/        # UI components (NotificationBar, Navbar, Certificate)
 │   │   ├── pages/             # Dashboard views (Donor, Recipient, Hospital, Admin, Chat)
 │   │   ├── redux/             # Redux state slices (authSlice)
 │   │   ├── utils/             # API client, Socket handlers, EmailJS, Firebase SDK
@@ -73,9 +74,9 @@ ONEDROP/
 
 ## 🔮 Future Enhancements
 
-- **AI Demand Forecasting**: Predicting regional blood demand spikes using historical donation patterns.
-- **Donor Recommendation Engine**: Automated donor ranking based on response rate, distance, and donation eligibility cooldown.
-- **Blood Shortage Prediction**: Proactive alerting for hospital blood bank inventory shortages.
+- **AI Demand Forecasting**: Predicting regional blood demand spikes using historical donation data.
+- **Donor Recommendation Engine**: Automated donor ranking based on response rate, distance, and donation cooldown.
+- **Blood Shortage Alerting**: Proactive alerting for hospital blood bank inventory shortages.
 
 ---
 
