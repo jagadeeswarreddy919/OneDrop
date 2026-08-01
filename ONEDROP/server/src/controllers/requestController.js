@@ -236,7 +236,7 @@ exports.createRequest = async (req, res) => {
           if (recipient.isDonor) {
             // Trigger SMS alert to the matching donor
             try {
-              const smsMessage = `🚨 ONEDROP EMERGENCY: ${bloodGroup} blood match required for ${patientName} at ${hospitalName}, ${city}. Proximity matching active. Accept request on your dashboard.`;
+              const smsMessage = `🚨 ONEDROP EMERGENCY: ${bloodGroup} blood match required for ${patientName} at ${hospitalName}, ${city || state}. Login to accept: https://onedrop-india.vercel.app/donor`;
               await sendSMS({
                 to: recUser.phone,
                 message: smsMessage
@@ -266,7 +266,7 @@ exports.createRequest = async (req, res) => {
                   `<strong>Target Hospital/Clinic:</strong> ${hospitalName}, ${city}, ${state}<br>` +
                   `<strong>Proximity Pincode:</strong> ${pincode}<br><br>` +
                   `Please check your blood bank inventory and coordinate if you can help fulfill this request.`,
-              recipient.isDonor ? `http://localhost:5173/donor-dashboard` : `http://localhost:5173/hospital-dashboard`,
+              recipient.isDonor ? `https://onedrop-india.vercel.app/donor` : `https://onedrop-india.vercel.app/hospital`,
               recipient.isDonor ? 'Pledge Blood Donation' : 'Go to Hospital Portal'
             );
             await sendMail({
