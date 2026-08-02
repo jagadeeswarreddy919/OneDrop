@@ -16,9 +16,13 @@
     <script src="/firebase-config.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {});
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        window.addEventListener('load', async () => {
+          try {
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            console.log('[PWA Service Worker] Registered successfully with scope:', reg.scope);
+          } catch (err) {
+            console.warn('[PWA Service Worker] Registration notice:', err.message);
+          }
         });
       }
     </script>

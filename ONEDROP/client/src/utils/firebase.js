@@ -214,9 +214,10 @@ export const firebaseIsEmailVerified = () => {
 const registerMessagingServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-      scope: '/firebase-cloud-messaging-push-scope'
-    });
+    if (navigator.serviceWorker.controller) {
+      return await navigator.serviceWorker.ready;
+    }
+    const registration = await navigator.serviceWorker.register('/sw.js');
     return registration;
   } catch (err) {
     console.warn('[FCM] Messaging SW registration failed:', err.message);
