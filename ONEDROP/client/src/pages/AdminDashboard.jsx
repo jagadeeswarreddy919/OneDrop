@@ -245,17 +245,13 @@ const AdminDashboard = () => {
         message: broadcastMessage,
         targetRole: broadcastRole,
         bloodGroup: broadcastBloodGroup,
-        city: broadcastCity,
-        state: broadcastState,
         availabilityStatus: broadcastDonorStatus
       }, { headers });
-      alert('Notification broadcast successfully dispatched with filters.');
+      alert('Notification broadcast successfully dispatched to all target users.');
       setBroadcastTitle('');
       setBroadcastMessage('');
       setBroadcastRole('All');
       setBroadcastBloodGroup('All');
-      setBroadcastCity('');
-      setBroadcastState('');
       setBroadcastDonorStatus('All');
       loadSystemTelemetry();
     } catch (err) {
@@ -1088,29 +1084,6 @@ const AdminDashboard = () => {
                         </div>
                       </>
                     )}
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-1">Target City</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Tirupati"
-                          value={broadcastCity}
-                          onChange={(e) => setBroadcastCity(e.target.value)}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-1">Target State</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Andhra Pradesh"
-                          value={broadcastState}
-                          onChange={(e) => setBroadcastState(e.target.value)}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
-                        />
-                      </div>
-                    </div>
 
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-1">Announcement Message Title</label>

@@ -429,20 +429,10 @@ exports.broadcastNotification = async (req, res) => {
     const query = {};
     if (targetRole && targetRole !== 'All') {
       query.role = targetRole;
-    } else {
-      query.role = { $in: ['Donor', 'Recipient', 'Hospital'] };
     }
 
     if (bloodGroup && bloodGroup !== 'All') {
       query.bloodGroup = bloodGroup;
-    }
-
-    if (city) {
-      query.city = { $regex: new RegExp(city, 'i') };
-    }
-
-    if (state) {
-      query.state = { $regex: new RegExp(state, 'i') };
     }
 
     if (availabilityStatus && availabilityStatus !== 'All') {
