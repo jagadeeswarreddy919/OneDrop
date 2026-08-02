@@ -29,7 +29,7 @@ const bloodRequestSchema = new mongoose.Schema({
     coordinates: { type: [Number], default: [79.4192, 13.6288] }
   },
 
-  emergencyMode: { type: Boolean, default: false },
+  emergencyMode: { type: Boolean, default: true },
   neededBy: { type: Date, required: true },
   reason: { type: String, default: '' },
   status: { type: String, enum: ['Pending', 'Approved', 'Fulfilled', 'Cancelled'], default: 'Pending' },

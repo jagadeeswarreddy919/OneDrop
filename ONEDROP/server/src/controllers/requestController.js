@@ -126,7 +126,7 @@ exports.createRequest = async (req, res) => {
       village,
       pincode,
       hospitalAddress,
-      emergencyMode: emergencyMode || false,
+      emergencyMode: true,
       neededBy,
       reason,
       location: latitude && longitude ? {
@@ -140,11 +140,11 @@ exports.createRequest = async (req, res) => {
       performedBy: req.user.id,
       role: req.user.role,
       ipAddress: req.ip,
-      details: { requestId: newRequest._id, bloodGroup, emergencyMode }
+      details: { requestId: newRequest._id, bloodGroup, emergencyMode: true }
     });
 
     // ----------------------------------------------------
-    // AUTOMATIC SMART MATCHING & REAL-TIME NOTIFICATIONS
+    // AUTOMATIC SMART MATCHING & IMMEDIATE EMERGENCY NOTIFICATIONS
     // ----------------------------------------------------
     try {
       const donorQuery = {
@@ -178,21 +178,21 @@ exports.createRequest = async (req, res) => {
       ];
 
       if (allAlertRecipients.length > 0) {
-        // Save persistent notifications to the DB
+        // Save persistent emergency notifications to the DB
         const notificationsData = allAlertRecipients.map(recipient => ({
           recipient: recipient.user._id,
           donor: req.user.id,
           bloodRequest: newRequest._id,
-          type: emergencyMode ? 'emergency_request' : 'new_request',
+          type: 'emergency_request',
           message: recipient.isDonor
-            ? `🚨 Emergency! ${bloodGroup} blood request received for ${patientName} at ${hospitalName}, ${city}.`
-            : `🚨 Proximity Alert! ${bloodGroup} blood request received for ${patientName} at ${hospitalName}, ${city}. Please check inventory status.`,
+            ? `🚨 EMERGENCY! ${bloodGroup} blood request received for ${patientName} at ${hospitalName}, ${city}.`
+            : `🚨 EMERGENCY PROXIMITY ALERT! ${bloodGroup} blood request received for ${patientName} at ${hospitalName}, ${city}. Please check inventory status.`,
           requestStatus: 'Pending'
         }));
 
         await Notification.insertMany(notificationsData);
 
-        // Dispatch alerts
+        // Dispatch immediate alerts to all recipient devices
         allAlertRecipients.forEach(async (recipient) => {
           const recUser = recipient.user;
           
@@ -207,7 +207,7 @@ exports.createRequest = async (req, res) => {
             hospitalName,
             place: `${city}, ${district}, ${state}`,
             pincode,
-            emergencyMode,
+            emergencyMode: true,
             neededBy,
             contactNumber: req.user.phone,
             createdAt: newRequest.createdAt
@@ -215,10 +215,11 @@ exports.createRequest = async (req, res) => {
 
           if (recUser.fcmToken) {
             sendPushNotification(recUser.fcmToken, {
-              title: 'Urgent Blood Request',
-              body: `${bloodGroup} blood needed near ${city || 'Tirupati'}. Tap to help save a life.`,
+              title: '🚨 URGENT EMERGENCY BLOOD REQUEST',
+              body: `🚨 ${bloodGroup} blood match required for ${patientName} at ${hospitalName}, ${city || state}. Tap to help save a life!`,
+              tag: 'onedrop-emergency',
               data: {
-                type: emergencyMode ? 'emergency_request' : 'new_request',
+                type: 'emergency_request',
                 requestId: newRequest._id.toString(),
                 requesterId: req.user.id.toString(),
                 chatPartnerId: req.user.id.toString()
