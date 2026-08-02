@@ -1,8 +1,21 @@
 const admin = require('firebase-admin');
 const path = require('path');
 const fs = require('fs');
+const webpush = require('web-push');
 
 let messaging = null;
+
+// Configure VAPID for Web Push Notifications (Mobile status bar delivery)
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BPc2F7ZFdeZzgc37MGS70XAmwRIj9WUDcpGAgCEexk05blYrae9gTIgTf5pkuzGuzS0AM9WnSFd-t-lVAc-ye_o';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'JBQA0CwG4MfoGkI2FZXXvuSaNVCsmPTblxbQMm_AjZ4';
+const VAPID_EMAIL = process.env.VAPID_EMAIL || 'mailto:onedroplifesaver@gmail.com';
+
+try {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  console.log('[WebPush VAPID] Web Push Service initialized with VAPID credentials.');
+} catch (err) {
+  console.warn('[WebPush VAPID] VAPID initialization notice:', err.message);
+}
 
 try {
   // Path to the service account credentials JSON
@@ -16,10 +29,10 @@ try {
     messaging = admin.messaging();
     console.log('[Firebase Push] Admin SDK initialized successfully.');
   } else {
-    console.warn('[Firebase Push] Service Account JSON not found. Falling back to local messaging & WebSocket delivery.');
+    console.warn('[Firebase Push] Service Account JSON not found. WebPush VAPID active for PWA mobile push notifications.');
   }
 } catch (error) {
-  console.error('[Firebase Push] Initialization failed, using local WebSockets fallback:', error.message);
+  console.error('[Firebase Push] Initialization notice:', error.message);
 }
 
 /**
@@ -61,7 +74,6 @@ const verifyFirebaseIdToken = async (idToken) => {
     }
   } else {
     console.warn('[Firebase Auth] Admin SDK not initialized. Applying development fallback decoding.');
-    // Simulated token parser (split JWT payload)
     try {
       const parts = idToken.split('.');
       if (parts.length === 3) {
@@ -87,37 +99,64 @@ const verifyFirebaseIdToken = async (idToken) => {
 };
 
 /**
- * Sends a real-time push notification via FCM
- * @param {string} token - FCM Device Token of the recipient
+ * Sends a real-time push notification via Web Push VAPID or FCM
+ * @param {string|object} token - FCM Device Token or WebPush Subscription Object/JSON string
  * @param {object} payload - Notification data containing title, body, and meta
  */
 const sendPushNotification = async (token, payload) => {
-  if (!token) return { success: false, reason: 'No FCM token provided.' };
+  if (!token) return { success: false, reason: 'No push token or subscription provided.' };
 
-  const message = {
-    token,
-    notification: {
-      title: payload.title,
-      body: payload.body
-    },
-    data: payload.data || {},
-    webpush: {
-      notification: {
+  // 1. Handle WebPush Subscription Object or JSON string from Mobile PWA
+  let subscription = null;
+  if (typeof token === 'object' && token.endpoint) {
+    subscription = token;
+  } else if (typeof token === 'string' && token.startsWith('{') && token.includes('endpoint')) {
+    try {
+      subscription = JSON.parse(token);
+    } catch (e) {}
+  }
+
+  if (subscription && subscription.endpoint) {
+    try {
+      const pushPayload = JSON.stringify({
         title: payload.title,
         body: payload.body,
         icon: '/be_a_hero.png',
         badge: '/be_a_hero.png',
-        vibrate: [300, 100, 300, 100, 300],
-        requireInteraction: true,
-        tag: payload.tag || payload.data?.tag || payload.data?.type || 'onedrop-push'
-      },
-      fcmOptions: {
-        link: payload.data?.type === 'chat_message' ? '/chat' : payload.data?.type === 'new_request' ? '/donor' : '/'
-      }
-    }
-  };
+        tag: payload.tag || payload.data?.type || 'onedrop-push',
+        data: payload.data || {}
+      });
 
+      await webpush.sendNotification(subscription, pushPayload);
+      console.log(`[WebPush Gateway] Successfully sent mobile status bar alert to ${subscription.endpoint.slice(0, 45)}...`);
+      return { success: true, gateway: 'WebPush' };
+    } catch (err) {
+      console.error('[WebPush Gateway] Mobile push failed:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 2. Handle Firebase Admin FCM Token if initialized
   if (messaging) {
+    const message = {
+      token,
+      notification: {
+        title: payload.title,
+        body: payload.body
+      },
+      data: payload.data || {},
+      webpush: {
+        notification: {
+          title: payload.title,
+          body: payload.body,
+          icon: '/be_a_hero.png',
+          badge: '/be_a_hero.png',
+          vibrate: [300, 100, 300, 100, 300],
+          requireInteraction: true,
+          tag: payload.tag || payload.data?.tag || payload.data?.type || 'onedrop-push'
+        }
+      }
+    };
     try {
       const response = await messaging.send(message);
       console.log('[Firebase Push] Notification sent successfully:', response);
@@ -126,10 +165,10 @@ const sendPushNotification = async (token, payload) => {
       console.error('[Firebase Push] Error sending FCM message:', error.message);
       return { success: false, error: error.message };
     }
-  } else {
-    console.log(`[Firebase Push Delivery] Token: ${token} | Title: ${payload.title} | Body: ${payload.body}`);
-    return { success: true, mocked: true };
   }
+
+  console.log(`[Push Notification Dispatch Log] Token: ${typeof token === 'string' ? token.slice(0, 30) : 'Sub'} | Title: ${payload.title} | Body: ${payload.body}`);
+  return { success: true, mocked: true };
 };
 
 module.exports = { 

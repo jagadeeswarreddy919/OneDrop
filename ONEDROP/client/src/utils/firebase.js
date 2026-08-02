@@ -238,41 +238,70 @@ const getMessagingInstance = async () => {
   return null;
 };
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export const requestFcmToken = async () => {
   try {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-      console.warn('[FCM] Push not supported in this browser.');
+      console.warn('[PWA Push] Push notifications not supported in this browser.');
       return null;
     }
 
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      console.warn('[FCM] Notification permission denied.');
+      console.warn('[PWA Push] Notification permission denied by user.');
       return null;
     }
 
+    const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || VAPID_KEY || 'BPc2F7ZFdeZzgc37MGS70XAmwRIj9WUDcpGAgCEexk05blYrae9gTIgTf5pkuzGuzS0AM9WnSFd-t-lVAc-ye_o';
+
+    // 1. Try native W3C WebPush Subscription on active PWA Service Worker
+    try {
+      const swReg = await navigator.serviceWorker.ready;
+      if (swReg && 'pushManager' in swReg) {
+        let sub = await swReg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await swReg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+          });
+        }
+        if (sub) {
+          const subJsonStr = JSON.stringify(sub);
+          console.log('[PWA Push] Mobile status bar push subscription generated successfully!');
+          return subJsonStr;
+        }
+      }
+    } catch (webPushErr) {
+      console.warn('[PWA Push] Native WebPush subscription error, trying FCM fallback:', webPushErr.message);
+    }
+
+    // 2. Fallback to Firebase Messaging SDK if configured
     const messaging = await getMessagingInstance();
-    if (!messaging) {
-      const mockToken = `fcm_mock_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-      console.log('[FCM] Using dev mock token (add VITE_FIREBASE_* to .env for real push).');
-      return mockToken;
+    if (messaging) {
+      const swRegistration = await registerMessagingServiceWorker();
+      const token = await getToken(messaging, {
+        vapidKey: vapidPublicKey,
+        serviceWorkerRegistration: swRegistration
+      });
+      if (token) {
+        console.log('[FCM] Device token registered via FCM SDK.');
+        return token;
+      }
     }
 
-    const swRegistration = await registerMessagingServiceWorker();
-    const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: swRegistration
-    });
-
-    if (token) {
-      console.log('[FCM] Device token registered.');
-      return token;
-    }
-
-    const mockToken = `fcm_mock_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    return mockToken;
+    return null;
   } catch (error) {
-    console.error('[FCM] Token error:', error.message);
+    console.error('[PWA Push] Token error:', error.message);
     return null;
   }
 };
