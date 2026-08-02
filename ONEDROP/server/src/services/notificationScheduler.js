@@ -4,6 +4,7 @@ const BloodRequest = require('../models/BloodRequest');
 const Notification = require('../models/Notification');
 const { sendPushNotification } = require('../utils/firebase');
 const { broadcastToUsers } = require('../config/socket');
+const { sendWhatsApp } = require('../utils/whatsapp');
 
 /**
  * Send 5-Hour Blood Request Check Notification to all active users.
@@ -92,7 +93,7 @@ const sendGreetingNotification = async (slot) => {
 
     console.log(`[NotificationScheduler] Dispatching ${greetingSlot.toUpperCase()} greeting notification...`);
     
-    const users = await User.find({}, '_id fullName fcmToken');
+    const users = await User.find({}, '_id fullName fcmToken phone');
     if (!users || users.length === 0) {
       console.log('[NotificationScheduler] No users found for greeting dispatch.');
       return { success: true, count: 0 };
@@ -101,6 +102,8 @@ const sendGreetingNotification = async (slot) => {
     const notificationDocs = [];
     const userIdsToNotify = [];
     const sentFcmTokens = new Set();
+    let sampleTitle = '';
+    let sampleMessage = '';
 
     for (const user of users) {
       const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Lifesaver';
@@ -118,6 +121,9 @@ const sendGreetingNotification = async (slot) => {
         message = `Good Evening, ${firstName}! 🌙 Thank you for supporting the ONEDROP lifesaver network. Review local blood storage levels and emergency requests tonight.`;
       }
 
+      sampleTitle = title;
+      sampleMessage = message;
+
       userIdsToNotify.push(user._id);
       notificationDocs.push({
         recipient: user._id,
@@ -127,7 +133,7 @@ const sendGreetingNotification = async (slot) => {
         createdAt: new Date()
       });
 
-      // Send 1 single FCM push notification per unique device token with fixed tag
+      // 1. Send FCM push notification per unique device token
       if (user.fcmToken && !sentFcmTokens.has(user.fcmToken)) {
         sentFcmTokens.add(user.fcmToken);
         sendPushNotification(user.fcmToken, {
@@ -150,8 +156,22 @@ const sendGreetingNotification = async (slot) => {
     }
 
     // Broadcast socket alert to online sockets
+    const notifId = `greeting-${greetingSlot}-${Date.now()}`;
     broadcastToUsers(userIdsToNotify, 'new_notification', {
+      _id: notifId,
+      id: notifId,
       type: 'greeting',
+      title: sampleTitle,
+      message: sampleMessage,
+      slot: greetingSlot,
+      read: false,
+      createdAt: new Date()
+    });
+
+    broadcastToUsers(userIdsToNotify, 'greeting', {
+      id: notifId,
+      title: sampleTitle,
+      message: sampleMessage,
       slot: greetingSlot,
       createdAt: new Date()
     });
@@ -186,35 +206,37 @@ const purgeOldChatMessages = async () => {
 const initNotificationScheduler = () => {
   console.log('[NotificationScheduler] Initializing background notification schedules...');
 
+  const cronOptions = { timezone: process.env.TZ || 'Asia/Kolkata' };
+
   // 1. Cron schedule for 5-hour blood request check notification: every 5 hours (at minute 0 of hours 0,5,10,15,20)
   cron.schedule('0 */5 * * *', () => {
     console.log('[NotificationScheduler Cron] 5-hour blood request check triggered.');
     sendBloodRequestCheckNotification();
-  });
+  }, cronOptions);
 
   // 2. Cron schedule for Morning Greeting (08:00 AM)
   cron.schedule('0 8 * * *', () => {
     console.log('[NotificationScheduler Cron] Morning greeting triggered at 08:00 AM.');
     sendGreetingNotification('morning');
-  });
+  }, cronOptions);
 
   // 3. Cron schedule for Afternoon Greeting (01:00 PM / 13:00)
   cron.schedule('0 13 * * *', () => {
     console.log('[NotificationScheduler Cron] Afternoon greeting triggered at 01:00 PM.');
     sendGreetingNotification('afternoon');
-  });
+  }, cronOptions);
 
   // 4. Cron schedule for Evening Greeting (07:00 PM / 19:00)
   cron.schedule('0 19 * * *', () => {
     console.log('[NotificationScheduler Cron] Evening greeting triggered at 07:00 PM.');
     sendGreetingNotification('evening');
-  });
+  }, cronOptions);
 
   // 5. Cron schedule for 30-Day Chat Message Retention Cleanup (02:00 AM daily)
   cron.schedule('0 2 * * *', () => {
     console.log('[NotificationScheduler Cron] Executing daily 30-day chat retention cleanup...');
     purgeOldChatMessages();
-  });
+  }, cronOptions);
 
   // Execute initial 30-day cleanup 30 seconds after server startup
   setTimeout(purgeOldChatMessages, 30 * 1000);
