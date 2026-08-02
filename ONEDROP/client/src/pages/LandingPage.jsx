@@ -6,7 +6,7 @@ import {
   MapPin, Phone, Mail, Clock, ChevronDown, BookOpen, MessageSquare,
   Shield, Bell, Star, BarChart3, Plus, ArrowRight, ShieldAlert,
   Check, Play, Smartphone, Laptop, Compass, HeartHandshake, ShieldCheck,
-  LogIn
+  LogIn, Instagram, Linkedin
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1353,9 +1353,20 @@ const LandingPage = () => {
               Connecting lives through real-time, peer-to-peer blood donation networks. Utilizing smart proximity location matching to prevent regional shortages across India.
             </p>
             <div className="flex items-center gap-3">
-              <a href="#" className="p-2 bg-slate-50 dark:bg-dark-800 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition border border-slate-100 dark:border-slate-800"><Share2 className="w-4 h-4" /></a>
-              <a href="mailto:support@onedrop.org" className="p-2 bg-slate-50 dark:bg-dark-800 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition border border-slate-100 dark:border-slate-800"><Mail className="w-4 h-4" /></a>
-              <a href="tel:+918500508940" className="p-2 bg-slate-50 dark:bg-dark-800 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition border border-slate-100 dark:border-slate-800"><Phone className="w-4 h-4" /></a>
+              <a href="mailto:onedropind@gmail.com" title="Email: onedropind@gmail.com" className="p-2.5 bg-slate-50 dark:bg-dark-800 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition border border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs font-bold">
+                <Mail className="w-4 h-4 text-rose-500" />
+                <span>onedropind@gmail.com</span>
+              </a>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <a href="https://www.instagram.com/onedrop.ind" target="_blank" rel="noopener noreferrer" title="Instagram: @onedrop.ind" className="p-2.5 bg-slate-50 dark:bg-dark-800 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-rose-500 hover:to-purple-600 hover:text-white rounded-xl transition border border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs font-bold">
+                <Instagram className="w-4 h-4 text-pink-500 hover:text-white" />
+                <span>@onedrop.ind</span>
+              </a>
+              <a href="https://www.linkedin.com/company/onedrop-ind/" target="_blank" rel="noopener noreferrer" title="LinkedIn: ONEDROP" className="p-2.5 bg-slate-50 dark:bg-dark-800 hover:bg-blue-600 hover:text-white rounded-xl transition border border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs font-bold">
+                <Linkedin className="w-4 h-4 text-blue-500 hover:text-white" />
+                <span>LinkedIn</span>
+              </a>
             </div>
           </div>
 
