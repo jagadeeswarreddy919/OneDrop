@@ -1029,21 +1029,6 @@ const LandingPage = () => {
                         <div className="text-right flex flex-col items-end gap-1.5 shrink-0">
                           <span className="px-3 py-1 text-xs font-black bg-rose-100 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-full">{d.bloodGroup}</span>
                           <div className="flex gap-2">
-                            {/* Contact/Call Button */}
-                            <a
-                              href={token && user ? `tel:${d.phone}` : '#'}
-                              onClick={(e) => {
-                                if (!token || !user) {
-                                  e.preventDefault();
-                                  alert("Please log in to contact or chat with verified platform donors.");
-                                  navigate("/login");
-                                }
-                              }}
-                              className="p-1.5 px-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm transition-all flex items-center gap-1"
-                              title="Call Donor"
-                            >
-                              <Phone className="w-3.5 h-3.5" /> Call
-                            </a>
                             {/* Chat Button */}
                             <button
                               type="button"

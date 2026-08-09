@@ -689,14 +689,7 @@ const DonorDashboard = () => {
     }
   }, [user, token]);
 
-  // Smart Search donor finder fetch trigger (4s fast refresh rate)
-  useEffect(() => {
-    if (activeTab === 'smartMatch') {
-      fetchEligibleDonors();
-      const donorsInterval = setInterval(fetchEligibleDonors, 4000);
-      return () => clearInterval(donorsInterval);
-    }
-  }, [activeTab, filterBloodGroup, filterState, filterDistrict, filterCity, filterPincode, filterAvailability, filterVerified]);
+
 
 
 
@@ -1624,7 +1617,6 @@ const DonorDashboard = () => {
                 {[
                   { id: 'dashboard', label: 'Dashboard', icon: Activity, desc: 'Overview & Stats' },
                   { id: 'requests', label: 'Blood Requests', icon: Heart, desc: 'Browse & Create Requests', badge: nearbyRequests.length },
-                  { id: 'smartMatch', label: 'Smart Match Finder', icon: Sparkles, desc: 'Find Eligible Donors' },
                   { id: 'donations', label: 'Donations', icon: Calendar, desc: 'Cooldown & History' },
                   { id: 'rewards', label: 'Rewards & Wallet', icon: Gift, desc: 'Points & Coupons' },
                   { id: 'referrals', label: 'Referrals', icon: Share2, desc: 'Invite Friends & Earn' },
@@ -1705,7 +1697,6 @@ const DonorDashboard = () => {
             {[
               { id: 'dashboard', label: 'Dashboard', icon: Activity },
               { id: 'requests', label: 'Blood Requests', icon: Heart, badge: nearbyRequests.length },
-              { id: 'smartMatch', label: 'Smart Match Finder', icon: Sparkles },
               { id: 'donations', label: 'Donations', icon: Calendar },
               { id: 'rewards', label: 'Rewards', icon: Gift },
               { id: 'referrals', label: 'Referrals', icon: Share2 },
@@ -2651,117 +2642,7 @@ const DonorDashboard = () => {
                 </div>
               )}
 
-              {/* TAB 11: SMART MATCH FINDER */}
-              {activeTab === 'smartMatch' && (
-                <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg space-y-6">
-                  <div className="border-b pb-4">
-                    <h3 className="font-black text-lg flex items-center gap-2">
-                      <Sparkles className="text-primary-500 animate-pulse" /> Intelligent Smart Match Finder
-                    </h3>
-                    <p className="text-xs text-slate-450">Type in blood group and location keywords. Matches Indian regional hierarchies automatically using regex and smart coordinates mapping.</p>
-                  </div>
 
-                  <div className="max-w-2xl">
-                    <SmartSearchInput 
-                      onFilterUpdate={(filters) => {
-                        // Only update if the parsed value is valid; don't default to 'O+'
-                        setFilterBloodGroup(filters.bloodGroup || '');
-                        setFilterState(filters.state || '');
-                        setFilterDistrict(filters.district || '');
-                        setFilterCity(filters.city || '');
-                      }} 
-                      placeholder="Type e.g. AB- Kadapa, O+ Bangalore, or leave blank to see all..."
-                    />
-                  </div>
-
-                  {/* Quick toggle filters */}
-                  <div className="flex flex-wrap gap-4 items-center bg-slate-50 dark:bg-dark-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-500">Availability:</span>
-                      <select 
-                        value={filterAvailability} 
-                        onChange={(e) => setFilterAvailability(e.target.value)}
-                        className="p-1.5 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300"
-                      >
-                        <option value="all">All Available</option>
-                        <option value="available">🟢 Available Only</option>
-                        <option value="emergency">🟣 Emergency Only</option>
-                      </select>
-                    </div>
-
-                    <label className="flex items-center gap-2 font-bold text-slate-500 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={filterVerified} 
-                        onChange={(e) => setFilterVerified(e.target.checked)}
-                        className="w-4 h-4 rounded text-primary-500 border-slate-350"
-                      />
-                      <span>⭐ Show Verified Donors Only</span>
-                    </label>
-                  </div>
-
-                  {/* Donor Search Grid */}
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {searching ? (
-                      <div className="col-span-full text-center py-12 space-y-2 text-slate-400">
-                        <Loader2 className="w-10 h-10 mx-auto animate-spin text-primary-500" />
-                        <p className="text-sm font-semibold">Running real-time database queries & AI matching...</p>
-                      </div>
-                    ) : eligibleDonors.length > 0 ? (
-                      eligibleDonors.map((donor) => (
-                        <div key={donor._id} className="p-5 bg-slate-50 dark:bg-dark-80/40 border border-slate-200/50 dark:border-slate-800 rounded-2xl hover:shadow-lg transition-all space-y-4 relative overflow-hidden">
-                          {donor.isVerifiedDonor && (
-                            <span className="absolute top-3 right-3 px-2 py-0.5 bg-amber-500/10 text-amber-600 text-[8px] font-black uppercase tracking-wider rounded-lg border border-amber-500/20">
-                              ⭐ Verified
-                            </span>
-                          )}
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary-500/10 text-primary-500 flex items-center justify-center font-black text-xs border border-primary-500/20">
-                              {donor.bloodGroup}
-                            </div>
-                            <div className="text-xs truncate max-w-[70%]">
-                              <h5 className="font-extrabold text-slate-800 dark:text-white truncate">{donor.fullName}</h5>
-                              <p className="text-slate-450 truncate">{donor.city}, {donor.state}</p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5 text-[11px] text-slate-500">
-                            <p className="flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                              <span>Match Score: <span className="font-black text-primary-500">{donor.matchScore || 100} Score</span></span>
-                            </p>
-                            <p className="flex items-center gap-1.5">
-                              <Activity className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Response Efficiency: <span className="font-extrabold text-emerald-500">{donor.responseRate || '98%'}</span></span>
-                            </p>
-                            <p className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                              <span>Status: <span className="font-extrabold text-slate-650 dark:text-slate-200">{donor.availabilityStatus}</span></span>
-                            </p>
-                          </div>
-
-                          {donor._id !== user?._id && (
-                            <button
-                              type="button"
-                              onClick={() => handleInitiateChat(donor._id)}
-                              className="w-full py-2 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/40 rounded-xl font-bold text-xs hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all flex items-center justify-center gap-1.5"
-                            >
-                              <MessageSquare className="w-4 h-4" /> Secure Chat Now
-                            </button>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="col-span-full text-center py-12 text-slate-400 space-y-3">
-                        <Sparkles className="w-12 h-12 mx-auto text-slate-300" />
-                        <p className="text-sm font-bold text-slate-500">No donors match the current filters.</p>
-                        <p className="text-xs">Try typing a blood group or city above, or use the availability filter.</p>
-                        <p className="text-[10px] text-slate-400">Example: <span className="font-bold">"O+ Hyderabad"</span> or <span className="font-bold">"AB- Mumbai"</span></p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
 
               {/* TAB 3: DONATIONS & HEALTH VERIFICATION */}
@@ -3803,7 +3684,6 @@ const DonorDashboard = () => {
                   {[
                     { id: 'dashboard', label: 'Dashboard', icon: Activity },
                     { id: 'requests', label: 'Blood Requests', icon: Heart, badge: nearbyRequests.length },
-                    { id: 'smartMatch', label: 'Smart Match Finder', icon: Sparkles },
                     { id: 'donations', label: 'Donations', icon: Calendar },
                     { id: 'rewards', label: 'Rewards', icon: Gift },
                     { id: 'referrals', label: 'Referrals', icon: Share2 },
@@ -4446,7 +4326,7 @@ const DonorDashboard = () => {
                 <div className="text-center py-12 text-slate-400 space-y-2">
                   <AlertCircle className="w-10 h-10 mx-auto text-slate-350 animate-pulse" />
                   <p className="text-xs font-extrabold">No matching proximity donors found in your area.</p>
-                  <p className="text-[10px]">Try searching with "Smart Match Finder" or expanding your area parameters.</p>
+                  <p className="text-[10px]">Try expanding your area parameters.</p>
                 </div>
               )}
             </div>
