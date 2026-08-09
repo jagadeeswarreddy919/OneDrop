@@ -37,11 +37,7 @@ const schema = yup.object().shape({
     .matches(/^[6-9]\d{9}$/, 'Phone must be a valid 10-digit Indian mobile number')
     .required('Phone number is required'),
   password: yup.string()
-    .min(8, 'Password must be at least 8 characters')
-    .matches(/[A-Z]/, 'Must contain at least one uppercase letter')
-    .matches(/[a-z]/, 'Must contain at least one lowercase letter')
-    .matches(/[0-9]/, 'Must contain at least one number')
-    .matches(/[^A-Za-z0-9]/, 'Must contain at least one special character')
+    .min(6, 'Password must be at least 6 characters')
     .required('Password is required'),
   confirmPassword: yup.string()
     .oneOf([yup.ref('password'), null], 'Passwords must match')
@@ -186,27 +182,13 @@ const RegisterPage = () => {
     }
   }, [prefillData, setValue]);
 
-  // Calculate password strength rating
+  // Calculate password strength rating (any 6+ characters allowed)
   const passwordStrength = useMemo(() => {
-    if (!watchedPassword) return { score: 0, text: 'Very Weak', color: 'bg-slate-200', width: 'w-0' };
-    let score = 0;
-    if (watchedPassword.length >= 8) score++;
-    if (/[A-Z]/.test(watchedPassword)) score++;
-    if (/[0-9]/.test(watchedPassword)) score++;
-    if (/[^A-Za-z0-9]/.test(watchedPassword)) score++;
-
-    switch (score) {
-      case 0:
-      case 1:
-        return { score, text: 'Weak ⚠️', color: 'bg-red-500', width: 'w-1/4' };
-      case 2:
-        return { score, text: 'Fair ⚡', color: 'bg-orange-500', width: 'w-2/4' };
-      case 3:
-        return { score, text: 'Good ⭐', color: 'bg-yellow-500', width: 'w-3/4' };
-      case 4:
-      default:
-        return { score, text: 'Strong 🔥', color: 'bg-emerald-500', width: 'w-full' };
+    if (!watchedPassword) return { score: 0, text: 'Required (Min 6 characters)', color: 'bg-slate-200', width: 'w-0' };
+    if (watchedPassword.length >= 6) {
+      return { score: 4, text: 'Valid Password (6+ characters) ✅', color: 'bg-emerald-500', width: 'w-full' };
     }
+    return { score: 1, text: 'Too short (Min 6 characters)', color: 'bg-red-500', width: 'w-1/2' };
   }, [watchedPassword]);
 
   // Handle image preview conversion
