@@ -8,15 +8,21 @@ const GREETING_BY_LANG = {
 };
 
 export const getTimeBasedGreeting = (lang = 'en') => {
-  const hour = new Date().getHours();
+  const hour = Number(
+    new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      hour12: false,
+    }).format(new Date())
+  );
   const bundle = GREETING_BY_LANG[lang] || GREETING_BY_LANG.en;
   if (hour < 12) return bundle.morning;
   if (hour < 17) return bundle.afternoon;
   return bundle.evening;
 };
 
-export const buildGreetingMessage = (name, lang = 'en') => {
+export const buildGreetingMessage = (fullName, lang = 'en') => {
   const greeting = getTimeBasedGreeting(lang);
-  const firstName = name?.split(' ')[0] || 'Lifesaver';
-  return `${greeting}, ${firstName}! Welcome to ONEDROP — your blood donor bridge is active.`;
+  const firstName = fullName?.trim().split(/\s+/)[0] || 'Lifesaver';
+  return `${greeting}, ${firstName}! Welcome back to ONEDROP.`;
 };
