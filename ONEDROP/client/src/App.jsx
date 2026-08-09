@@ -643,7 +643,7 @@ const AppShell = () => {
     };
 
     pollNotifications();
-    const interval = setInterval(pollNotifications, 30000);
+    const interval = setInterval(pollNotifications, 4000); // 4-second fast notification refresh rate
 
     return () => clearInterval(interval);
   }, [isAuthenticated, token, triggerNotification]);

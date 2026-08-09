@@ -247,7 +247,7 @@ const RecipientDashboard = () => {
   const fetchNearbyRequests = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}`);
-      setNearbyRequests(res.data.filter(r => r.status === 'Pending' && r.requester?._id !== user?._id && r.requester !== user?._id));
+      setNearbyRequests(res.data.filter(r => (r.status === 'Pending' || r.status === 'Approved') && r.requester?._id !== user?._id && r.requester !== user?._id));
     } catch (err) {
       console.error('[Fetch Regional Requests Error]', err);
     }
@@ -451,8 +451,13 @@ const RecipientDashboard = () => {
       fetchNearbyRequests();
       fetchEligibleDonors();
 
+      // Fast 4-second auto-refresh for blood requests and donor list
+      const refreshInterval = setInterval(() => {
+        fetchMyRequests();
+        fetchNearbyRequests();
+        fetchEligibleDonors();
+      }, 4000);
 
-      
       setEditName(user.fullName || '');
       setEditPhone(user.phone || '');
       setEditState(normalizeState(user.state || ''));
@@ -460,6 +465,8 @@ const RecipientDashboard = () => {
       setEditCity(normalizeCity(user.state || '', user.district || '', user.city || ''));
       setEditAddress(user.address || '');
       setEditPincode(user.pincode || '');
+
+      return () => clearInterval(refreshInterval);
     }
   }, [user]);
 

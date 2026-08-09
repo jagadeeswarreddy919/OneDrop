@@ -127,7 +127,11 @@ const sendPushNotification = async (token, payload) => {
         data: payload.data || {}
       });
 
-      await webpush.sendNotification(subscription, pushPayload);
+      await webpush.sendNotification(subscription, pushPayload, {
+        TTL: 86400,
+        urgency: 'high',
+        topic: 'emergency'
+      });
       console.log(`[WebPush Gateway] Successfully sent mobile status bar alert to ${subscription.endpoint.slice(0, 45)}...`);
       return { success: true, gateway: 'WebPush' };
     } catch (err) {

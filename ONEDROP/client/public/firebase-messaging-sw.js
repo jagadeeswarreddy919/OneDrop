@@ -24,27 +24,33 @@ if (config.apiKey && config.projectId) {
   });
 }
 
-// Universal Web Push handler for Mobile Phone Top Notification Bar
+// Universal Web Push handler for Mobile Phone Top Notification Bar & OS Popups
 self.addEventListener('push', (event) => {
-  let data = {};
+  let parsed = {};
   if (event.data) {
     try {
-      data = event.data.json();
+      parsed = event.data.json();
     } catch (e) {
-      data = { title: '🚨 ONEDROP Alert', body: event.data.text() };
+      parsed = { title: '🚨 ONEDROP Alert', body: event.data.text() };
     }
   }
 
-  const title = data.title || data.notification?.title || '🚨 ONEDROP Alert';
+  const title = parsed.title || parsed.notification?.title || '🚨 ONEDROP Lifesaver Alert';
+  const body = parsed.body || parsed.message || parsed.notification?.body || 'New blood request or urgent alert received.';
+  const payloadData = parsed.data || parsed;
+
   const options = {
-    body: data.body || data.message || data.notification?.body || 'New blood request or chat alert received.',
+    body: body,
     icon: '/be_a_hero.png',
     badge: '/be_a_hero.png',
     vibrate: [300, 100, 300, 100, 300],
     requireInteraction: true,
     renotify: true,
-    tag: data.tag || 'onedrop-push-' + Date.now(),
-    data: data
+    tag: parsed.tag || 'onedrop-push-' + Date.now(),
+    data: payloadData,
+    actions: [
+      { action: 'open', title: 'Open ONEDROP' }
+    ]
   };
 
   event.waitUntil(
@@ -54,7 +60,8 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const data = event.notification.data || {};
+  const rawData = event.notification.data || {};
+  const data = rawData.data || rawData;
   let targetUrl = '/';
 
   if (data.type === 'chat_message' && data.chatId) {
@@ -69,6 +76,8 @@ self.addEventListener('notificationclick', (event) => {
     targetUrl = '/donor-dashboard?action=certificate';
   } else if (data.chatPartnerId) {
     targetUrl = `/chat?partnerId=${data.chatPartnerId}`;
+  } else if (data.url) {
+    targetUrl = data.url;
   }
 
   event.waitUntil(

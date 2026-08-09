@@ -689,10 +689,12 @@ const DonorDashboard = () => {
     }
   }, [user, token]);
 
-  // Smart Search donor finder fetch trigger
+  // Smart Search donor finder fetch trigger (4s fast refresh rate)
   useEffect(() => {
     if (activeTab === 'smartMatch') {
       fetchEligibleDonors();
+      const donorsInterval = setInterval(fetchEligibleDonors, 4000);
+      return () => clearInterval(donorsInterval);
     }
   }, [activeTab, filterBloodGroup, filterState, filterDistrict, filterCity, filterPincode, filterAvailability, filterVerified]);
 
@@ -705,9 +707,10 @@ const DonorDashboard = () => {
         const res = await axios.get(
           `${API_URL}/api/requests?state=${user?.state || ''}`
         );
-        // Show all pending requests that are not from the current user
-        setNearbyRequests(res.data.filter((r) => r.status === 'Pending'));
-        const pledged = res.data.filter((r) =>
+        setNearbyRequests(res.data.filter((r) => r.status === 'Pending' || r.status === 'Approved'));
+
+        const allRes = await axios.get(`${API_URL}/api/requests?status=all&state=${user?.state || ''}`);
+        const pledged = (allRes.data || []).filter((r) =>
           r.status === 'Fulfilled' &&
           r.donorsPledged?.some((p) => (p.donor?._id || p.donor)?.toString() === user?._id?.toString())
         );
@@ -716,7 +719,11 @@ const DonorDashboard = () => {
         console.error(err);
       }
     };
-    if (user) fetchRequests();
+    if (user) {
+      fetchRequests();
+      const requestsInterval = setInterval(fetchRequests, 4000); // 4-second fast refresh rate
+      return () => clearInterval(requestsInterval);
+    }
   }, [user, activeTab]);
 
   useEffect(() => {
@@ -908,8 +915,8 @@ const DonorDashboard = () => {
     
     fetchNotifications();
 
-    // Background polling every 30 seconds for fallback sync (real-time is WebSocket & FCM push driven)
-    const interval = setInterval(fetchNotifications, 30000);
+    // Background polling every 4 seconds for fast sync (real-time is WebSocket & FCM push driven)
+    const interval = setInterval(fetchNotifications, 4000);
 
     return () => clearInterval(interval);
   }, [token]);
@@ -1328,12 +1335,12 @@ const DonorDashboard = () => {
         { unitsPledged: 1 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Thank you for pledging! The request has been successfully accepted and closed.');
-      // Refresh pending requests matching donor's state
+      alert('Thank you for pledging! You have successfully accepted this blood request.');
+      // Refresh active requests matching donor's state
       const res = await axios.get(
         `${API_URL}/api/requests?state=${user?.state || ''}`
       );
-      setNearbyRequests(res.data.filter(r => r.status === 'Pending'));
+      setNearbyRequests(res.data.filter(r => r.status === 'Pending' || r.status === 'Approved'));
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to pledge.');
     }
@@ -1355,7 +1362,7 @@ const DonorDashboard = () => {
       
       // Refresh requests listing
       const res = await axios.get(`${API_URL}/api/requests?state=${user?.state || ''}`);
-      setNearbyRequests(res.data.filter(r => r.status === 'Pending'));
+      setNearbyRequests(res.data.filter(r => r.status === 'Pending' || r.status === 'Approved'));
       
       // Optionally trigger direct chat with the requester
       if (matchedReq?.request?.requester) {
@@ -2245,12 +2252,18 @@ const DonorDashboard = () => {
                               >
                                 ✕ Decline
                               </button>
-                              <button
-                                onClick={() => handlePledge(req._id)}
-                                className={`flex items-center gap-1.5 px-5 py-2 text-xs font-black text-white ${uiTheme.bg} ${uiTheme.hover} rounded-xl transition-all shadow-md flex-grow sm:flex-grow-0`}
-                              >
-                                ✅ Accept & Donate
-                              </button>
+                              {req.donorsPledged?.some((p) => (p.donor?._id || p.donor)?.toString() === user?._id?.toString()) ? (
+                                <span className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-xl border border-emerald-300 dark:border-emerald-800">
+                                  ✅ You Accepted / Pledged
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handlePledge(req._id)}
+                                  className={`flex items-center gap-1.5 px-5 py-2 text-xs font-black text-white ${uiTheme.bg} ${uiTheme.hover} rounded-xl transition-all shadow-md flex-grow sm:flex-grow-0`}
+                                >
+                                  ✅ Accept & Donate
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))

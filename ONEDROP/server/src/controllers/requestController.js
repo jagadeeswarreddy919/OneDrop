@@ -354,10 +354,11 @@ exports.pledgeDonation = async (req, res) => {
       status: 'Pledged'
     });
 
-    // Update status to Accepted, acceptedBy, and requestStatus
-    request.status = 'Accepted';
+    // Update status to Accepted in requestStatus, acceptedBy, and add pledge
     request.requestStatus = 'Accepted';
-    request.acceptedBy = req.user.id;
+    if (!request.acceptedBy) {
+      request.acceptedBy = req.user.id;
+    }
     await request.save();
 
     // Fetch accepting donor information first to use details in all channels
@@ -606,14 +607,15 @@ exports.updatePledgeStatus = async (req, res) => {
       details: { requestId: id, pledgeId, donorId: pledge.donor, outcome: status }
     });
 
-    // Auto-fulfill and delete request ticket after donation verification & certificate issuance
+    // Auto-fulfill request ticket after donation verification & certificate issuance
     if (status === 'Verified' || status === 'Donated' || request.unitsFulfilled >= request.unitsRequired) {
       request.status = 'Fulfilled';
-      await BloodRequest.findByIdAndDelete(id);
-      console.log(`[Donation Complete] Request ${id} deleted after successful donation verification, certificate issuance & thank you dispatch.`);
+      request.requestStatus = 'Fulfilled';
+      await request.save();
+      console.log(`[Donation Complete] Request ${id} marked as Fulfilled after successful donation verification & certificate issuance.`);
       return res.status(200).json({ 
-        message: 'Donation successfully marked as completed! Appreciation Certificate & Thank You message issued to donor, and request ticket deleted.',
-        request: { ...request.toObject(), status: 'Fulfilled' }
+        message: 'Donation successfully marked as completed! Appreciation Certificate & Thank You message issued to donor, and request closed.',
+        request
       });
     }
 
