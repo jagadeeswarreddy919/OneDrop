@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd ONEDROP/client && npm install && npm run build",
+  "outputDirectory": "ONEDROP/client/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
