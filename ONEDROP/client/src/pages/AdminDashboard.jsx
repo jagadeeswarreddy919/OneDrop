@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { updateProfileSuccess } from '../redux/authSlice';
 import { 
   ShieldCheck, Users, Activity, FileText, Database, ShieldAlert, Award, 
   BrainCircuit, TrendingUp, Download, Heart, Megaphone, Calendar, MapPin, 
   Gift, RefreshCw, BarChart2, Plus, Trash2, Key, Info, Check, X, AlertTriangle, Play, Hospital, Image,
-  Globe, Search, Phone, MessageSquare, Menu, Home, Edit3, Wand2, Sparkles, Loader2
+  Globe, Search, Phone, MessageSquare, Menu, Home, Edit3, Wand2, Sparkles, Loader2, Eye, EyeOff, UserCheck, Lock, Mail
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, AreaChart, Area } from 'recharts';
 import axios from 'axios';
@@ -14,7 +14,8 @@ import { API_URL } from '../utils/api';
 import { STATES_DATA } from '../utils/statesData';
 
 const AdminDashboard = () => {
-  const { token } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { user, token } = useSelector((state) => state.auth);
 
   // Core telemetry lists
   const [metrics, setMetrics] = useState(null);
@@ -91,6 +92,68 @@ const AdminDashboard = () => {
   const [galleryCategory, setGalleryCategory] = useState('drives');
   const [galleryDesc, setGalleryDesc] = useState('');
   const [galleryImage, setGalleryImage] = useState('');
+
+  // Admin Security Profile Form States
+  const [adminEditName, setAdminEditName] = useState('');
+  const [adminEditEmail, setAdminEditEmail] = useState('');
+  const [adminEditPhone, setAdminEditPhone] = useState('');
+  const [adminEditState, setAdminEditState] = useState('');
+  const [adminEditDistrict, setAdminEditDistrict] = useState('');
+  const [adminEditCity, setAdminEditCity] = useState('');
+  const [adminEditAddress, setAdminEditAddress] = useState('');
+  const [adminEditPincode, setAdminEditPincode] = useState('');
+  const [adminNewPassword, setAdminNewPassword] = useState('');
+  const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setAdminEditName(user.fullName || '');
+      setAdminEditEmail(user.email || '');
+      setAdminEditPhone(user.phone || '');
+      setAdminEditState(user.state || '');
+      setAdminEditDistrict(user.district || '');
+      setAdminEditCity(user.city || '');
+      setAdminEditAddress(user.address || '');
+      setAdminEditPincode(user.pincode || '');
+    }
+  }, [user]);
+
+  const handleSaveAdminProfile = async (e) => {
+    e.preventDefault();
+    if (adminNewPassword && adminNewPassword !== adminConfirmPassword) {
+      alert('New Password and Confirm Password do not match.');
+      return;
+    }
+    try {
+      setActionLoader(true);
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.put(`${API_URL}/api/auth/profile`, {
+        fullName: adminEditName,
+        email: adminEditEmail,
+        phone: adminEditPhone,
+        state: adminEditState,
+        district: adminEditDistrict,
+        city: adminEditCity,
+        address: adminEditAddress,
+        pincode: adminEditPincode,
+        newPassword: adminNewPassword || undefined
+      }, { headers });
+
+      alert('Admin Profile & Security Credentials updated successfully!');
+      if (res.data.user) {
+        dispatch(updateProfileSuccess(res.data.user));
+      }
+      setAdminNewPassword('');
+      setAdminConfirmPassword('');
+      loadSystemTelemetry();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to update Admin credentials.');
+    } finally {
+      setActionLoader(false);
+    }
+  };
 
   // Global Telemetry Fetcher
   const loadSystemTelemetry = async (showLoader = false) => {
@@ -705,6 +768,7 @@ const AdminDashboard = () => {
     {
       title: 'Second Tier: System',
       items: [
+        { name: 'Admin Profile & Settings', icon: Key, color: 'text-rose-500' },
         { name: 'Campaign System', icon: Calendar, color: 'text-sky-500' },
         { name: 'Reward Management', icon: Award, color: 'text-violet-500' },
         { name: 'Hospital Management', icon: Hospital, color: 'text-teal-500' },
@@ -1261,6 +1325,188 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB: Admin Profile & Settings */}
+          {activePanel === 'Admin Profile & Settings' && (
+            <div className="space-y-6 animate-fade-in">
+              <div>
+                <h2 className="text-xl font-black flex items-center gap-2">
+                  <UserCheck className="text-primary-500" /> Admin Credentials & Security Settings
+                </h2>
+                <p className="text-xs text-slate-500">Update your administrative login email, password, contact details, and facility locations.</p>
+              </div>
+
+              <form onSubmit={handleSaveAdminProfile} className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-6">
+                <div className="border-b pb-3 dark:border-slate-800">
+                  <h3 className="font-extrabold text-sm text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-500" /> Account & Contact Credentials
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Modify login details used to access the Command Center.</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Full Name / Administrator Title</label>
+                    <div className="relative">
+                      <UserCheck className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        value={adminEditName}
+                        onChange={(e) => setAdminEditName(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Login Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                      <input
+                        type="email"
+                        required
+                        value={adminEditEmail}
+                        onChange={(e) => setAdminEditEmail(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Contact Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        value={adminEditPhone}
+                        onChange={(e) => setAdminEditPhone(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-b pb-3 border-t pt-6 dark:border-slate-800">
+                  <h3 className="font-extrabold text-sm text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-rose-500" /> Location Coordinates
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Configure administrative jurisdiction and state parameters.</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">State</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminEditState}
+                      onChange={(e) => setAdminEditState(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">District</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminEditDistrict}
+                      onChange={(e) => setAdminEditDistrict(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">City / Mandal</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminEditCity}
+                      onChange={(e) => setAdminEditCity(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Address Detail</label>
+                    <input
+                      type="text"
+                      value={adminEditAddress}
+                      onChange={(e) => setAdminEditAddress(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Pincode</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminEditPincode}
+                      onChange={(e) => setAdminEditPincode(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-b pb-3 border-t pt-6 dark:border-slate-800">
+                  <h3 className="font-extrabold text-sm text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-amber-500" /> Change Admin Password
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Leave blank if you do not wish to update your current password.</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">New Password (Min 6 chars)</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                      <input
+                        type={showAdminPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={adminNewPassword}
+                        onChange={(e) => setAdminNewPassword(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminPassword(!showAdminPassword)}
+                        className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600"
+                      >
+                        {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Confirm New Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                      <input
+                        type={showAdminPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={adminConfirmPassword}
+                        onChange={(e) => setAdminConfirmPassword(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={actionLoader}
+                    className="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-md transition-all uppercase tracking-wider flex items-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4" /> {actionLoader ? 'Updating Credentials...' : 'Save & Update Admin Credentials'}
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 

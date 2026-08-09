@@ -206,6 +206,15 @@ exports.login = async (req, res) => {
     }
     console.log("[LOGIN] Password verified successfully");
 
+    // Auto-verify user upon successful login
+    if (!user.isVerifiedDonor || !user.isVerifiedHospital || !user.isEmailVerified || user.status !== 'Active') {
+      user.isVerifiedDonor = true;
+      user.isVerifiedHospital = true;
+      user.isEmailVerified = true;
+      user.status = 'Active';
+      await user.save();
+    }
+
     // Audit logs
     await AuditLog.create({
       action: 'USER_LOGIN',
@@ -246,26 +255,55 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const updates = req.body;
-    // Prevent editing key security details directly
-    delete updates.password;
-    delete updates.email;
-    delete updates.role;
-    delete updates.rewardPoints;
-    delete updates.referralCode;
+    const { fullName, email, phone, state, district, city, area, village, pincode, address, newPassword } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    Object.assign(user, updates);
+    if (email && email.toLowerCase() !== user.email) {
+      const existingEmail = await User.findOne({ email: email.toLowerCase(), _id: { $ne: user._id } });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'This email address is already in use by another account.' });
+      }
+      user.email = email.toLowerCase();
+    }
+
+    if (phone && phone !== user.phone) {
+      const existingPhone = await User.findOne({ phone, _id: { $ne: user._id } });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'This phone number is already registered to another account.' });
+      }
+      user.phone = phone;
+    }
+
+    if (fullName) user.fullName = fullName;
+    if (state) user.state = state;
+    if (district) user.district = district;
+    if (city) user.city = city;
+    if (area !== undefined) user.area = area;
+    if (village !== undefined) user.village = village;
+    if (pincode) user.pincode = pincode;
+    if (address !== undefined) user.address = address;
+
+    if (newPassword && newPassword.trim().length >= 6) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword.trim(), salt);
+    }
+
+    // Always auto-verify user profile updates
+    user.isVerifiedDonor = true;
+    user.isVerifiedHospital = true;
+    user.isEmailVerified = true;
+    user.status = 'Active';
+
     await user.save();
 
-    // Hide password before returning
-    user.password = undefined;
+    const userResponse = user.toObject();
+    delete userResponse.password;
 
-    res.status(200).json({ message: 'Profile updated successfully.', user });
+    res.status(200).json({ message: 'Profile credentials updated successfully.', user: userResponse });
   } catch (error) {
     res.status(500).json({ message: 'Profile update failed.', error: error.message });
   }
