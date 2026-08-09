@@ -967,8 +967,8 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {requestsList.length > 0 ? (
-                      requestsList.map((req) => (
+                    {(requestsList || []).length > 0 ? (
+                      (requestsList || []).map((req) => (
                         <tr key={req._id} className="hover:bg-slate-50/50 dark:hover:bg-dark-800/10">
                           <td className="p-4">
                             <p className="font-bold text-slate-800 dark:text-white">{req.patientName}</p>
@@ -1062,7 +1062,7 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {usersList.map((usr) => (
+                    {(usersList || []).map((usr) => (
                       <tr key={usr._id} className="hover:bg-slate-50/50 dark:hover:bg-dark-800/10">
                         <td className="p-4 font-bold">{usr.fullName}</td>
                         <td className="p-4 text-slate-500">
@@ -2222,12 +2222,12 @@ const AdminDashboard = () => {
 
               {/* User Cards Grid */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {usersList.filter(u => {
+                {(usersList || []).filter(u => {
                   const q = registrySearchQuery.toLowerCase();
                   if (!q) return true;
                   return u.fullName?.toLowerCase().includes(q) || u.role?.toLowerCase().includes(q) || (u.city && u.city.toLowerCase().includes(q)) || (u.bloodGroup && u.bloodGroup.toLowerCase().includes(q));
                 }).length > 0 ? (
-                  usersList.filter(u => {
+                  (usersList || []).filter(u => {
                     const q = registrySearchQuery.toLowerCase();
                     if (!q) return true;
                     return u.fullName?.toLowerCase().includes(q) || u.role?.toLowerCase().includes(q) || (u.city && u.city.toLowerCase().includes(q)) || (u.bloodGroup && u.bloodGroup.toLowerCase().includes(q));
@@ -2892,6 +2892,54 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+class AdminDashboardErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[AdminDashboard ErrorBoundary caught error]', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="max-w-4xl mx-auto my-16 p-8 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl space-y-4 text-center">
+          <div className="w-16 h-16 bg-rose-100 dark:bg-rose-950/40 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+            ⚠️
+          </div>
+          <h2 className="text-xl font-black text-slate-800 dark:text-white">Admin Command Center Recovered</h2>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            {this.state.error?.message || 'A temporary interface rendering issue occurred. Click below to reload telemetry.'}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
+            className="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-md transition-all uppercase tracking-wider"
+          >
+            Reload Admin Command Center
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const WrappedAdminDashboard = (props) => (
+  <AdminDashboardErrorBoundary>
+    <AdminDashboard {...props} />
+  </AdminDashboardErrorBoundary>
+);
+
+export default WrappedAdminDashboard;
 
 
