@@ -262,6 +262,21 @@ const AdminDashboard = () => {
     }
   };
 
+  const triggerGreetingsDispatch = async (slot) => {
+    try {
+      setActionLoader(true);
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.post(`${API_URL}/api/notifications/trigger-greetings`, { slot }, { headers });
+      alert(`Successfully dispatched ${slot.toUpperCase()} greeting notifications & push alerts to all platform users!`);
+      loadSystemTelemetry();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to dispatch greeting notifications.');
+    } finally {
+      setActionLoader(false);
+    }
+  };
+
   // System Management Actions
   const handleCreateCampaign = async (e) => {
     e.preventDefault();
@@ -1117,6 +1132,40 @@ const AdminDashboard = () => {
                       <Megaphone className="w-4 h-4" /> {actionLoader ? 'Dispersing Broadcast...' : 'Dispatch Broadcast Alert'}
                     </button>
                   </form>
+
+                  {/* Time-Based Greetings Dispatcher */}
+                  <div className="p-4 bg-slate-50 dark:bg-dark-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4" /> Time-Based Greetings Dispatcher
+                    </h4>
+                    <p className="text-[10px] text-slate-400">Trigger personalized greeting notifications & FCM push alerts for all registered users.</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => triggerGreetingsDispatch('morning')}
+                        disabled={actionLoader}
+                        className="py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] rounded-xl transition-all shadow-sm flex items-center justify-center gap-1"
+                      >
+                        🌅 Morning
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => triggerGreetingsDispatch('afternoon')}
+                        disabled={actionLoader}
+                        className="py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-[10px] rounded-xl transition-all shadow-sm flex items-center justify-center gap-1"
+                      >
+                        ☀️ Afternoon
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => triggerGreetingsDispatch('evening')}
+                        disabled={actionLoader}
+                        className="py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-xl transition-all shadow-sm flex items-center justify-center gap-1"
+                      >
+                        🌙 Evening
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Logs Table Card */}

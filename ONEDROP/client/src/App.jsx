@@ -342,7 +342,7 @@ const AppShell = () => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
-  const { enablePush } = usePushNotifications(triggerNotification);
+  const { enablePush, showGreeting } = usePushNotifications(triggerNotification);
 
   const handleEnablePush = async () => {
     const fcmToken = await enablePush();
@@ -356,6 +356,17 @@ const AppShell = () => {
       });
     }
   };
+
+  // Automatically trigger session greeting notification on login
+  useEffect(() => {
+    if (isAuthenticated && user?.fullName && !sessionStorage.getItem('onedrop_session_greeting_shown')) {
+      sessionStorage.setItem('onedrop_session_greeting_shown', 'true');
+      const timer = setTimeout(() => {
+        showGreeting();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user, showGreeting]);
 
 
   useEffect(() => {
