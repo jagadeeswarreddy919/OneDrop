@@ -22,6 +22,31 @@ exports.createBlog = async (req, res) => {
   }
 };
 
+exports.updateBlog = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, tags, coverImage } = req.body;
+
+    if (!['Admin', 'Super Admin'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only administrators can edit articles.' });
+    }
+
+    const blog = await Blog.findByIdAndUpdate(
+      id,
+      { $set: { title, content, tags: tags || [], coverImage } },
+      { new: true }
+    );
+
+    if (!blog) {
+      return res.status(404).json({ message: 'Article not found.' });
+    }
+
+    res.status(200).json({ message: 'Article updated successfully.', blog });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update article.', error: error.message });
+  }
+};
+
 exports.getBlogs = async (req, res) => {
   try {
     const blogs = await Blog.find()

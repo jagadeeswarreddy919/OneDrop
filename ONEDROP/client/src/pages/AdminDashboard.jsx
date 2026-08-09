@@ -6,7 +6,7 @@ import {
   ShieldCheck, Users, Activity, FileText, Database, ShieldAlert, Award, 
   BrainCircuit, TrendingUp, Download, Heart, Megaphone, Calendar, MapPin, 
   Gift, RefreshCw, BarChart2, Plus, Trash2, Key, Info, Check, X, AlertTriangle, Play, Hospital, Image,
-  Globe, Search, Phone, MessageSquare, Menu, Home
+  Globe, Search, Phone, MessageSquare, Menu, Home, Edit3, Wand2, Sparkles, Loader2
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, AreaChart, Area } from 'recharts';
 import axios from 'axios';
@@ -65,11 +65,14 @@ const AdminDashboard = () => {
   const [campPincode, setCampPincode] = useState('');
   const [campBanner, setCampBanner] = useState('');
 
-  // Create Blog Form State
+  // Create & Edit Blog Form State
   const [blogTitle, setBlogTitle] = useState('');
   const [blogContent, setBlogContent] = useState('');
   const [blogTags, setBlogTags] = useState('');
   const [blogCover, setBlogCover] = useState('');
+  const [editingBlogId, setEditingBlogId] = useState(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
 
   // Notification Broadcast Form State
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -406,27 +409,68 @@ const AdminDashboard = () => {
   };
 
   // CMS Blog Actions
-  const handleCreateBlog = async (e) => {
+  const handleOpenCreateBlog = () => {
+    setEditingBlogId(null);
+    setBlogTitle('');
+    setBlogContent('');
+    setBlogTags('');
+    setBlogCover('');
+    setAiPrompt('');
+    setShowBlogModal(true);
+  };
+
+  const handleEditBlog = (blog) => {
+    setEditingBlogId(blog._id);
+    setBlogTitle(blog.title || '');
+    setBlogContent(blog.content || '');
+    setBlogTags(blog.tags ? blog.tags.join(', ') : '');
+    setBlogCover(blog.coverImage || '');
+    setAiPrompt(blog.title || '');
+    setShowBlogModal(true);
+  };
+
+  const handleGenerateAiImage = () => {
+    const promptToUse = aiPrompt || blogTitle || 'Blood donation hero saving lives in hospital emergency';
+    setIsGeneratingAiImage(true);
+    const seed = Math.floor(Math.random() * 1000000);
+    const generatedUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptToUse)}?width=800&height=500&nologo=true&seed=${seed}`;
+    setBlogCover(generatedUrl);
+    setTimeout(() => {
+      setIsGeneratingAiImage(false);
+    }, 1200);
+  };
+
+  const handleSaveBlog = async (e) => {
     e.preventDefault();
     try {
       setActionLoader(true);
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${API_URL}/api/blogs`, {
+      const payload = {
         title: blogTitle,
         content: blogContent,
-        tags: blogTags ? blogTags.split(',').map(t => t.trim()) : [],
+        tags: blogTags ? blogTags.split(',').map(t => t.trim()).filter(Boolean) : [],
         coverImage: blogCover || 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800'
-      }, { headers });
-      alert('Blog article published.');
+      };
+
+      if (editingBlogId) {
+        await axios.put(`${API_URL}/api/blogs/${editingBlogId}`, payload, { headers });
+        alert('CMS Blog article updated successfully!');
+      } else {
+        await axios.post(`${API_URL}/api/blogs`, payload, { headers });
+        alert('CMS Blog article published successfully!');
+      }
+
       setShowBlogModal(false);
+      setEditingBlogId(null);
       setBlogTitle('');
       setBlogContent('');
       setBlogTags('');
       setBlogCover('');
+      setAiPrompt('');
       loadSystemTelemetry();
     } catch (err) {
       console.error(err);
-      alert('Failed to publish article.');
+      alert(err.response?.data?.message || 'Failed to save blog article.');
     } finally {
       setActionLoader(false);
     }
@@ -1555,7 +1599,7 @@ const AdminDashboard = () => {
                   <p className="text-xs text-slate-500">Edit, add, or delete blog articles published on the general public hub.</p>
                 </div>
                 <button
-                  onClick={() => setShowBlogModal(true)}
+                  onClick={handleOpenCreateBlog}
                   className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
                 >
                   <Plus className="w-4 h-4" /> Create Blog Post
@@ -1580,12 +1624,20 @@ const AdminDashboard = () => {
                           <span>Author: {blog.author?.fullName || 'System Admin'}</span>
                           <span>Published: {new Date(blog.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <button
-                          onClick={() => handleDeleteBlog(blog._id)}
-                          className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Purge Article
-                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => handleEditBlog(blog)}
+                            className="py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 dark:text-indigo-400 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" /> Edit Article
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBlog(blog._id)}
+                            className="py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Purge Article
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -2165,11 +2217,13 @@ const AdminDashboard = () => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 animate-scale-in">
             <div className="flex justify-between items-center border-b pb-3 dark:border-slate-850">
-              <h3 className="font-black text-base flex items-center gap-2"><FileText className="text-primary-500" /> Publish CMS Article</h3>
+              <h3 className="font-black text-base flex items-center gap-2">
+                <FileText className="text-primary-500" /> {editingBlogId ? '✏️ Edit CMS Article' : '✨ Publish CMS Article'}
+              </h3>
               <button onClick={() => setShowBlogModal(false)} className="p-1 bg-slate-50 hover:bg-slate-100 dark:bg-dark-800 dark:hover:bg-dark-700 rounded-full"><X className="w-5 h-5" /></button>
             </div>
 
-            <form onSubmit={handleCreateBlog} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveBlog} className="space-y-4 text-xs">
               <div>
                 <label className="block font-bold text-slate-500 mb-1">Article Title</label>
                 <input
@@ -2205,15 +2259,59 @@ const AdminDashboard = () => {
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-500 mb-1">Cover Image Link URL</label>
-                <input
-                  type="text"
-                  placeholder="Provide photo URL..."
-                  value={blogCover}
-                  onChange={(e) => setBlogCover(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
-                />
+              {/* AI Image Generator Component */}
+              <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" /> AI Cover Image Generator
+                  </span>
+                  <span className="text-[10px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold px-2 py-0.5 rounded-full">Free High-Res AI</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Describe image prompt (e.g. Lifesaver blood donation hero saving emergency lives)..."
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    className="flex-1 p-2.5 bg-white dark:bg-dark-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs outline-none focus:ring-2 focus:ring-purple-500/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGenerateAiImage}
+                    disabled={isGeneratingAiImage}
+                    className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 flex-shrink-0"
+                  >
+                    {isGeneratingAiImage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4" /> Generate AI
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block font-bold text-slate-500 text-[11px]">Cover Image Link URL</label>
+                  <input
+                    type="text"
+                    placeholder="AI image URL or paste custom image link..."
+                    value={blogCover}
+                    onChange={(e) => setBlogCover(e.target.value)}
+                    className="w-full p-2.5 bg-white dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                  />
+                  {blogCover && (
+                    <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 group h-36 mt-2">
+                      <img src={blogCover} alt="Cover Preview" className="w-full h-full object-cover" />
+                      <span className="absolute top-2 right-2 bg-slate-900/70 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
+                        <Image className="w-3 h-3" /> Live Preview
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <button
@@ -2221,7 +2319,7 @@ const AdminDashboard = () => {
                 disabled={actionLoader}
                 className="w-full py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl shadow-md transition-all uppercase tracking-wider"
               >
-                {actionLoader ? 'Publishing...' : 'Publish Article'}
+                {actionLoader ? 'Saving Article...' : (editingBlogId ? 'Save & Update Article' : 'Publish Article')}
               </button>
             </form>
           </div>
